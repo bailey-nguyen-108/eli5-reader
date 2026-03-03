@@ -52,43 +52,6 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
     }
   }, [currentBook, navigation]);
 
-  // Add global selection listener for Safari compatibility
-  useEffect(() => {
-    const handleSelectionChange = () => {
-      const selection = window.getSelection();
-      const selectedText = selection?.toString().trim();
-
-      if (selectedText && selectedText.length > 0) {
-        // Only show menu if selection is within our reading content
-        const range = selection?.getRangeAt(0);
-        const container = range?.commonAncestorContainer;
-
-        // Check if selection is within our reading content
-        let isInReadingContent = false;
-        let node = container;
-        while (node) {
-          if (node.nodeType === 1 && (node as Element).classList?.contains('reading-content')) {
-            isInReadingContent = true;
-            break;
-          }
-          node = node.parentNode;
-        }
-
-        if (isInReadingContent) {
-          handleTextSelection();
-        }
-      } else {
-        setShowSelectionMenu(false);
-      }
-    };
-
-    document.addEventListener('selectionchange', handleSelectionChange);
-
-    return () => {
-      document.removeEventListener('selectionchange', handleSelectionChange);
-    };
-  }, [eli5Phrases]);
-
   // Restore scroll position when book loads
   useEffect(() => {
     if (currentBook && scrollViewRef.current) {
@@ -123,42 +86,34 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
     );
   }
 
-  const handleTextSelection = (e?: any) => {
-    // Prevent Safari's native context menu
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
+  const handleTextSelection = () => {
+    // Get selected text from the window selection
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
 
-    // Small delay to ensure selection is complete on Safari
-    setTimeout(() => {
-      const selection = window.getSelection();
-      const selectedText = selection?.toString().trim();
+    if (selectedText && selectedText.length > 0) {
+      setCurrentSelection(selectedText);
 
-      if (selectedText && selectedText.length > 0) {
-        setCurrentSelection(selectedText);
+      // Check if the selected text is already highlighted
+      const isAlreadyHighlighted = eli5Phrases.some(
+        phrase => phrase.toLowerCase() === selectedText.toLowerCase()
+      );
+      setIsHighlightedSelection(isAlreadyHighlighted);
 
-        // Check if the selected text is already highlighted
-        const isAlreadyHighlighted = eli5Phrases.some(
-          phrase => phrase.toLowerCase() === selectedText.toLowerCase()
-        );
-        setIsHighlightedSelection(isAlreadyHighlighted);
+      // Get selection position for menu placement
+      const range = selection?.getRangeAt(0);
+      const rect = range?.getBoundingClientRect();
 
-        // Get selection position for menu placement (fixed positioning)
-        const range = selection?.getRangeAt(0);
-        const rect = range?.getBoundingClientRect();
-
-        if (rect) {
-          const menuWidth = isAlreadyHighlighted ? 90 : 60;
-          // For fixed positioning, use rect directly without scrollY
-          setSelectionMenuPosition({
-            x: rect.left + rect.width / 2 - menuWidth,
-            y: rect.top - 50,
-          });
-        }
-
-        setShowSelectionMenu(true);
+      if (rect) {
+        const menuWidth = isAlreadyHighlighted ? 90 : 60; // Adjust width for Remove button
+        setSelectionMenuPosition({
+          x: rect.left + rect.width / 2 - menuWidth,
+          y: rect.top - 40,
+        });
       }
-    }, 100);
+
+      setShowSelectionMenu(true);
+    }
   };
 
   const handleELI5Click = () => {
@@ -416,18 +371,7 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
         scrollEventThrottle={400}
       >
         {/* Reading Content - All Chapters */}
-        <View
-          style={styles.readingContent}
-          onStartShouldSetResponder={() => true}
-          // @ts-ignore - className is supported on web
-          className="reading-content"
-          onContextMenu={(e: any) => {
-            // Prevent default context menu on web
-            if (e && e.preventDefault) {
-              e.preventDefault();
-            }
-          }}
-        >
+        <View style={styles.readingContent} onStartShouldSetResponder={() => true}>
           {currentBook.content.chapters.map((chapter, chapterIndex) => (
             <View key={chapter.id} style={styles.chapterSection}>
               {/* Chapter Title */}
@@ -445,14 +389,7 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
                   onMouseUp={(e) => {
                     setCurrentChapterId(chapter.id);
                     setCurrentSelectionContext(paragraph.trim());
-                  }}
-                  onContextMenu={(e: any) => {
-                    // Prevent default context menu
-                    if (e && e.preventDefault) {
-                      e.preventDefault();
-                    }
-                    setCurrentChapterId(chapter.id);
-                    setCurrentSelectionContext(paragraph.trim());
+                    handleTextSelection();
                   }}
                 >
                   {renderHighlightedText(paragraph.trim())}
@@ -550,11 +487,6 @@ const styles = StyleSheet.create({
   },
   readingContent: {
     maxWidth: 600,
-    // @ts-ignore - WebkitUserSelect is web-only
-    WebkitUserSelect: 'text',
-    // @ts-ignore - WebkitTouchCallout is web-only
-    WebkitTouchCallout: 'none',
-    userSelect: 'text',
   },
   paragraph: {
     fontFamily: 'Libre Baskerville, serif',
@@ -562,11 +494,6 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     color: '#f0f0f0',
     marginBottom: 28,
-    // @ts-ignore - WebkitUserSelect is web-only
-    WebkitUserSelect: 'text',
-    // @ts-ignore - WebkitTouchCallout is web-only (disables Safari's callout menu)
-    WebkitTouchCallout: 'none',
-    userSelect: 'text',
   },
   highlightActive: {
     backgroundColor: '#4DFF7E',
