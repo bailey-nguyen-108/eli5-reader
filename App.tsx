@@ -17,6 +17,7 @@ export type RootStackParamList = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const SERVICE_WORKER_VERSION = '2026-03-03-1';
 
 const WEB_META = [
   { selector: 'meta[name="theme-color"]', tag: 'meta', attrs: { name: 'theme-color', content: '#050505' } },
@@ -82,9 +83,12 @@ export default function App() {
 
       if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch((error) => {
-            console.error('Service worker registration failed:', error);
-          });
+          navigator.serviceWorker
+            .register(`/sw.js?v=${SERVICE_WORKER_VERSION}`)
+            .then((registration) => registration.update())
+            .catch((error) => {
+              console.error('Service worker registration failed:', error);
+            });
         });
       }
     }
