@@ -7,6 +7,7 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  TextInput,
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import * as DocumentPicker from 'expo-document-picker';
@@ -29,10 +30,22 @@ interface ImportScreenProps {
   navigation: ImportScreenNavigationProp;
 }
 
+interface PendingImport {
+  title: string;
+  author: string;
+  defaultTitle: string;
+  defaultAuthor: string;
+  fileName: string;
+  format: Book['format'];
+  fileSize: number;
+  content: Book['content'];
+}
+
 export default function ImportScreen({ navigation }: ImportScreenProps) {
   const insets = useSafeAreaInsets();
   const [isUploading, setIsUploading] = useState(false);
   const [menuOpenBookId, setMenuOpenBookId] = useState<string | null>(null);
+  const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const { books, addBook, openBook, deleteBook } = useAppContext();
 
   // Get recent uploads (last 5 books, sorted by upload date)
@@ -83,51 +96,16 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
           const defaultTitle = parseResult.metadata?.title || fileName.replace(/\.[^/.]+$/, '');
           const defaultAuthor = parseResult.metadata?.author || 'Unknown Author';
 
-          const title = prompt('Enter book title:', defaultTitle);
-          const author = prompt('Enter author name:', defaultAuthor);
-
-          if (!title) {
-            Alert.alert('Import Cancelled', 'Book title is required');
-            setIsUploading(false);
-            return;
-          }
-
-          // Generate book metadata
-          const bookId = generateId();
-          const book: Book = {
-            id: bookId,
-            title: title || defaultTitle,
-            author: author || defaultAuthor,
-            abbr: generateBookAbbreviation(title || defaultTitle),
-            format: format || 'TXT',
-            accentColor: generateAccentColor(),
+          setPendingImport({
+            title: defaultTitle,
+            author: defaultAuthor,
+            defaultTitle,
+            defaultAuthor,
             fileName,
+            format: (format || 'TXT') as Book['format'],
             fileSize: file.size,
-            filePath: file.name, // For web, we can't get actual path
             content: parseResult.content,
-            uploadedAt: Date.now(),
-          };
-
-          // Save book to storage
-          await addBook(book);
-
-          Alert.alert(
-            'Book Imported',
-            `"${book.title}" has been added to your library.\n\nChapters detected: ${book.content.chapters.length}`,
-            [
-              {
-                text: 'View Library',
-                onPress: () => navigation.navigate('Library'),
-              },
-              {
-                text: 'Start Reading',
-                onPress: async () => {
-                  await openBook(book);
-                  navigation.navigate('Reader');
-                },
-              },
-            ]
-          );
+          });
         } catch (parseError: any) {
           console.error('Parse error:', parseError);
           Alert.alert('Import Error', parseError.message || 'Failed to parse file');
@@ -141,6 +119,63 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
       Alert.alert('Error', 'Failed to import document');
       console.error(error);
       setIsUploading(false);
+    }
+  };
+
+  const handleCancelPendingImport = () => {
+    setPendingImport(null);
+  };
+
+  const handleConfirmImport = async () => {
+    if (!pendingImport) return;
+
+    const trimmedTitle = pendingImport.title.trim();
+    const trimmedAuthor = pendingImport.author.trim();
+
+    if (!trimmedTitle) {
+      Alert.alert('Import Cancelled', 'Book title is required');
+      return;
+    }
+
+    try {
+      const bookId = generateId();
+      const book: Book = {
+        id: bookId,
+        title: trimmedTitle,
+        author: trimmedAuthor || pendingImport.defaultAuthor,
+        abbr: generateBookAbbreviation(trimmedTitle),
+        format: pendingImport.format,
+        accentColor: generateAccentColor(),
+        fileName: pendingImport.fileName,
+        fileSize: pendingImport.fileSize,
+        filePath: pendingImport.fileName,
+        content: pendingImport.content,
+        uploadedAt: Date.now(),
+      };
+
+      await addBook(book);
+      setPendingImport(null);
+
+      Alert.alert(
+        'Book Imported',
+        `"${book.title}" has been added to your library.\n\nChapters detected: ${book.content.chapters.length}`,
+        [
+          {
+            text: 'View Library',
+            onPress: () => navigation.navigate('Library'),
+          },
+          {
+            text: 'Start Reading',
+            onPress: async () => {
+              await openBook(book);
+              navigation.navigate('Reader');
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error saving imported book:', error);
+      Alert.alert('Import Error', 'Failed to save imported book');
     }
   };
 
@@ -317,6 +352,60 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
 
       {/* Bottom Navigation */}
       <NavigationBar />
+
+      {pendingImport && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Book Details</Text>
+            <Text style={styles.modalSubtitle}>
+              Confirm the title and author before adding this book to your library.
+            </Text>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Title</Text>
+              <TextInput
+                style={styles.input}
+                value={pendingImport.title}
+                onChangeText={(title) =>
+                  setPendingImport((prev) => (prev ? { ...prev, title } : prev))
+                }
+                placeholder="Book title"
+                placeholderTextColor="rgba(255,255,255,0.35)"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Author</Text>
+              <TextInput
+                style={styles.input}
+                value={pendingImport.author}
+                onChangeText={(author) =>
+                  setPendingImport((prev) => (prev ? { ...prev, author } : prev))
+                }
+                placeholder="Author name"
+                placeholderTextColor="rgba(255,255,255,0.35)"
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonSecondary]}
+                onPress={handleCancelPendingImport}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalButtonSecondaryText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonPrimary]}
+                onPress={handleConfirmImport}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalButtonPrimaryText}>Import</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -525,6 +614,85 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     zIndex: 101,
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    zIndex: 200,
+  },
+  modalCard: {
+    backgroundColor: '#111111',
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    gap: 16,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: 'rgba(255,255,255,0.65)',
+  },
+  inputGroup: {
+    gap: 8,
+  },
+  inputLabel: {
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    color: '#888',
+    fontWeight: '600',
+  },
+  input: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#181818',
+    color: '#ffffff',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    fontSize: 15,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  modalButton: {
+    flex: 1,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalButtonPrimary: {
+    backgroundColor: '#4DFF7E',
+  },
+  modalButtonSecondary: {
+    backgroundColor: '#1f1f1f',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  modalButtonPrimaryText: {
+    color: '#000000',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  modalButtonSecondaryText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '600',
   },
   menuItem: {
     paddingVertical: 12,
