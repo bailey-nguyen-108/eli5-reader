@@ -18,6 +18,7 @@ import SelectionMenu from '../components/SelectionMenu';
 import { ELI5Term } from '../types/ELI5';
 import { useAppContext } from '../context/AppContext';
 import { generateId, debounce, calculateReadingProgress } from '../utils/helpers';
+import AIService from '../services/aiService';
 
 type ELI5ReaderScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -116,11 +117,11 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
     }
   };
 
-  const handleELI5Click = () => {
+  const handleELI5Click = async () => {
     setShowSelectionMenu(false);
 
-    // Create an ELI5 term object from the selected text
-    const newTerm: ELI5Term = {
+    // Show loading state
+    const loadingTerm: ELI5Term = {
       id: generateId(),
       term: currentSelection,
       simpleTerm: currentSelection.split(' ')[0],
@@ -128,11 +129,43 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
       field: 'General',
       relatedCount: 2,
       readingTime: 15,
-      explanation: `This is a simplified explanation of "${currentSelection}". In the future, this will be powered by AI to provide contextual explanations tailored to your reading level.`,
+      explanation: 'Loading AI explanation...',
     };
 
-    setSelectedTerm(newTerm);
+    setSelectedTerm(loadingTerm);
     setShowSheet(true);
+
+    try {
+      // Get AI explanation with context
+      const aiResponse = await AIService.getELI5Explanation(
+        currentSelection,
+        currentSelectionContext
+      );
+
+      // Update with real explanation
+      const newTerm: ELI5Term = {
+        id: generateId(),
+        term: currentSelection,
+        simpleTerm: aiResponse.simpleTerm,
+        complexity: aiResponse.complexity,
+        field: aiResponse.field,
+        relatedCount: 2,
+        readingTime: Math.ceil(aiResponse.explanation.split(' ').length / 200 * 60), // ~200 words per minute
+        explanation: aiResponse.explanation,
+      };
+
+      setSelectedTerm(newTerm);
+    } catch (error) {
+      console.error('Error getting AI explanation:', error);
+
+      // Show error in the explanation
+      const errorTerm: ELI5Term = {
+        ...loadingTerm,
+        explanation: `Failed to get AI explanation. Please check your Claude API key in Settings. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+
+      setSelectedTerm(errorTerm);
+    }
   };
 
   const handleCopy = () => {

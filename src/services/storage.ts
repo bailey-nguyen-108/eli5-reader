@@ -201,45 +201,39 @@ class StorageService {
     return `${term.toLowerCase()}_${context.substring(0, 50)}`;
   }
 
-  async getCachedExplanation(term: string, context: string): Promise<string | null> {
+  async getCachedExplanation(cacheKey: string): Promise<any | null> {
     try {
       const cacheJSON = await AsyncStorage.getItem(STORAGE_KEYS.ELI5_CACHE);
       if (!cacheJSON) return null;
 
-      const cache: ELI5Cache[] = JSON.parse(cacheJSON);
+      const cache: Record<string, any> = JSON.parse(cacheJSON);
+      const entry = cache[cacheKey];
+
+      if (!entry) return null;
+
+      // Check if expired (30 days)
       const now = Date.now();
-      const cacheKey = this.getCacheKey(term, context);
+      const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
+      if (entry.cachedAt && now - entry.cachedAt > thirtyDaysInMs) {
+        return null;
+      }
 
-      // Find matching cache entry that hasn't expired
-      const entry = cache.find(
-        (item) =>
-          this.getCacheKey(item.term, item.context) === cacheKey && item.expiresAt > now
-      );
-
-      return entry ? entry.explanation : null;
+      return entry.data;
     } catch (error) {
       console.error('Error getting cached explanation:', error);
       return null;
     }
   }
 
-  async cacheExplanation(term: string, context: string, explanation: string): Promise<void> {
+  async cacheExplanation(cacheKey: string, data: any): Promise<void> {
     try {
       const cacheJSON = await AsyncStorage.getItem(STORAGE_KEYS.ELI5_CACHE);
-      const cache: ELI5Cache[] = cacheJSON ? JSON.parse(cacheJSON) : [];
+      const cache: Record<string, any> = cacheJSON ? JSON.parse(cacheJSON) : {};
 
-      const now = Date.now();
-      const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
-
-      const newEntry: ELI5Cache = {
-        term,
-        context,
-        explanation,
-        cachedAt: now,
-        expiresAt: now + thirtyDaysInMs,
+      cache[cacheKey] = {
+        data,
+        cachedAt: Date.now(),
       };
-
-      cache.push(newEntry);
 
       await AsyncStorage.setItem(STORAGE_KEYS.ELI5_CACHE, JSON.stringify(cache));
     } catch (error) {

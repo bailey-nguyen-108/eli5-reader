@@ -361,21 +361,22 @@ const styles = StyleSheet.create({
   },
   featuredGrid: {
     flexDirection: 'row',
-    gap: 20,
+    gap: 16,
     marginBottom: 32,
   },
   bookCard: {
     flex: 1,
-    gap: 12,
+    maxWidth: 140,
+    gap: 8,
   },
   coverArt: {
-    aspectRatio: 0.65,
+    aspectRatio: 0.7,
     backgroundColor: '#0a0a0a',
-    borderRadius: 12,
+    borderRadius: 8,
     position: 'relative',
     overflow: 'hidden',
-    padding: 24,
-    paddingHorizontal: 16,
+    padding: 16,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
     flexDirection: 'row',
@@ -387,8 +388,8 @@ const styles = StyleSheet.create({
   coverLetter: {
     fontFamily: 'Playfair Display, serif',
     fontStyle: 'italic',
-    fontSize: 32,
-    lineHeight: 35,
+    fontSize: 24,
+    lineHeight: 26,
     color: '#ffffff',
   },
   hairlineRule: {
@@ -425,13 +426,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   bookTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#ffffff',
-    lineHeight: 19,
+    lineHeight: 17,
   },
   bookAuthor: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#888',
   },
   progressContainer: {
