@@ -37,7 +37,7 @@ export default function SelectionMenu({ onELI5, onCopy, onRemove, onClose, posit
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: 'fixed',
     backgroundColor: '#8E94F2',
     borderRadius: 8,
     flexDirection: 'row',
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 5,
-    zIndex: 1000,
+    zIndex: 9999,
   },
   closeButton: {
     position: 'absolute',
