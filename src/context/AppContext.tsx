@@ -26,6 +26,7 @@ interface AppContextType {
   addBook: (book: Book) => Promise<void>;
   updateBook: (id: string, updates: Partial<Book>) => Promise<void>;
   deleteBook: (id: string) => Promise<void>;
+  openBook: (book: Book) => Promise<void>;
   setCurrentBook: (book: Book | null) => void;
 
   // Saved term operations
@@ -63,11 +64,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   // State
   const [books, setBooks] = useState<Book[]>([]);
   const [savedTerms, setSavedTerms] = useState<SavedTerm[]>([]);
-  const [currentBook, setCurrentBook] = useState<Book | null>(null);
+  const [currentBook, setCurrentBookState] = useState<Book | null>(null);
   const [settings, setSettings] = useState<AppSettings>({
     cacheEnabled: true,
     cacheExpirationDays: 30,
-    preferredModel: 'haiku',
+    preferredModel: 'gpt-4o-mini',
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -95,7 +96,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         // Set current book to the one marked as current read
         const current = loadedBooks.find(book => book.isCurrentRead);
         if (current) {
-          setCurrentBook(current);
+          setCurrentBookState(current);
         }
 
         // Clear expired cache entries
@@ -111,6 +112,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   }, []);
 
   // =============== BOOK OPERATIONS ===============
+
+  const setCurrentBook = useCallback((book: Book | null) => {
+    setCurrentBookState(book);
+  }, []);
 
   const getAllBooks = useCallback(async () => {
     try {
@@ -152,7 +157,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
       // Update current book if it's the one being updated
       if (currentBook?.id === id) {
-        setCurrentBook(prev => (prev ? { ...prev, ...updates } : null));
+        setCurrentBookState(prev => (prev ? { ...prev, ...updates } : null));
       }
     } catch (error) {
       console.error('Error updating book:', error);
@@ -171,13 +176,40 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
       // Clear current book if it was deleted
       if (currentBook?.id === id) {
-        setCurrentBook(null);
+        setCurrentBookState(null);
       }
     } catch (error) {
       console.error('Error deleting book:', error);
       throw error;
     }
   }, [currentBook]);
+
+  const openBook = useCallback(async (book: Book) => {
+    try {
+      const openedAt = Date.now();
+      const hasBook = books.some((existingBook) => existingBook.id === book.id);
+      const baseBooks = hasBook ? books : [...books, book];
+      const updatedBooks = baseBooks.map((existingBook) => ({
+        ...existingBook,
+        isCurrentRead: existingBook.id === book.id,
+        lastOpenedAt: existingBook.id === book.id ? openedAt : existingBook.lastOpenedAt,
+      }));
+
+      await Promise.all(updatedBooks.map((updatedBook) => StorageService.saveBook(updatedBook)));
+
+      const openedBook = updatedBooks.find((updatedBook) => updatedBook.id === book.id) || {
+        ...book,
+        isCurrentRead: true,
+        lastOpenedAt: openedAt,
+      };
+
+      setBooks(updatedBooks);
+      setCurrentBookState(openedBook);
+    } catch (error) {
+      console.error('Error opening book:', error);
+      throw error;
+    }
+  }, [books]);
 
   // =============== SAVED TERM OPERATIONS ===============
 
@@ -258,7 +290,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
         // Update current book if applicable
         if (currentBook?.id === progress.bookId) {
-          setCurrentBook(prev =>
+          setCurrentBookState(prev =>
             prev ? { ...prev, readingProgress: progress } : null
           );
         }
@@ -318,6 +350,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     addBook,
     updateBook,
     deleteBook,
+    openBook,
     setCurrentBook,
 
     // Saved term operations

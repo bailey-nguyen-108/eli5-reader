@@ -89,16 +89,16 @@ Update `src/services/aiService.ts` with your AI provider:
 
 ```typescript
 export async function generateBookSummary(text: string, title: string) {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01'
+      Authorization: `Bearer ${process.env.EXPO_PUBLIC_OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'gpt-4o-mini',
       max_tokens: 4096,
+      response_format: { type: 'json_object' },
       messages: [{
         role: 'user',
         content: `Analyze this book titled "${title}" and provide:
@@ -115,7 +115,7 @@ export async function generateBookSummary(text: string, title: string) {
   });
 
   const data = await response.json();
-  return JSON.parse(data.content[0].text);
+  return JSON.parse(data.choices[0].message.content);
 }
 ```
 

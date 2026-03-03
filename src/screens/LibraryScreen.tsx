@@ -29,7 +29,7 @@ interface LibraryScreenProps {
 export default function LibraryScreen({ navigation }: LibraryScreenProps) {
   const [searchText, setSearchText] = useState('');
   const [menuOpenBookId, setMenuOpenBookId] = useState<string | null>(null);
-  const { books, setCurrentBook, deleteBook } = useAppContext();
+  const { books, openBook, deleteBook } = useAppContext();
 
   // Filter and categorize books
   const { currentReads, recentUploads } = useMemo(() => {
@@ -43,18 +43,18 @@ export default function LibraryScreen({ navigation }: LibraryScreenProps) {
       );
     });
 
-    // Split into current reads (has reading progress) and recent uploads
+    // Split into current reads (opened before) and recent uploads (never opened)
     const current = filteredBooks.filter(
-      (book) => book.readingProgress && book.readingProgress.percentComplete > 0
+      (book) => Boolean(book.lastOpenedAt || book.isCurrentRead)
     );
     const recent = filteredBooks.filter(
-      (book) => !book.readingProgress || book.readingProgress.percentComplete === 0
+      (book) => !book.lastOpenedAt && !book.isCurrentRead
     );
 
-    // Sort current reads by last read date
+    // Sort current reads by last opened date
     current.sort((a, b) => {
-      const aTime = a.readingProgress?.lastReadAt || 0;
-      const bTime = b.readingProgress?.lastReadAt || 0;
+      const aTime = a.lastOpenedAt || 0;
+      const bTime = b.lastOpenedAt || 0;
       return bTime - aTime;
     });
 
@@ -64,8 +64,8 @@ export default function LibraryScreen({ navigation }: LibraryScreenProps) {
     return { currentReads: current, recentUploads: recent };
   }, [books, searchText]);
 
-  const handleBookPress = (book: Book) => {
-    setCurrentBook(book);
+  const handleBookPress = async (book: Book) => {
+    await openBook(book);
     navigation.navigate('Reader');
   };
 
@@ -179,19 +179,19 @@ export default function LibraryScreen({ navigation }: LibraryScreenProps) {
                     <View style={styles.hairlineRule} />
                     <View style={[styles.accentStripe, { backgroundColor: book.accentColor }]} />
                   </View>
+                  {book.readingProgress && (
+                    <View style={styles.progressContainer}>
+                      <View
+                        style={[
+                          styles.progressBar,
+                          { width: `${book.readingProgress.percentComplete}%` },
+                        ]}
+                      />
+                    </View>
+                  )}
                   <View style={styles.bookInfo}>
                     <Text style={styles.bookTitle}>{book.title}</Text>
                     <Text style={styles.bookAuthor}>{book.author}</Text>
-                    {book.readingProgress && (
-                      <View style={styles.progressContainer}>
-                        <View
-                          style={[
-                            styles.progressBar,
-                            { width: `${book.readingProgress.percentComplete}%` },
-                          ]}
-                        />
-                      </View>
-                    )}
                   </View>
                 </TouchableOpacity>
               ))}
@@ -207,9 +207,9 @@ export default function LibraryScreen({ navigation }: LibraryScreenProps) {
               <Text style={styles.sortLabel}>Sort: Date</Text>
             </View>
 
-            <View style={styles.bookList}>
+            <View style={styles.recentList}>
               {recentUploads.map((book) => (
-                <View key={book.id} style={styles.bookListItem}>
+                <View key={book.id} style={styles.recentItem}>
                   <View style={styles.thumb}>
                     <View style={styles.thumbAbbr}>
                       {book.abbr.map((letter, index) => (
@@ -222,12 +222,12 @@ export default function LibraryScreen({ navigation }: LibraryScreenProps) {
                     <View style={[styles.thumbAccentStripe, { backgroundColor: book.accentColor }]} />
                   </View>
                   <TouchableOpacity
-                    style={styles.listMeta}
+                    style={styles.fileInfo}
                     onPress={() => handleBookPress(book)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.listTitle}>{book.title}</Text>
-                    <Text style={styles.listAuthor}>
+                    <Text style={styles.fileName}>{book.title}</Text>
+                    <Text style={styles.fileMeta}>
                       {book.author} • {book.format}
                     </Text>
                   </TouchableOpacity>
@@ -447,10 +447,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#4DFF7E',
     borderRadius: 2,
   },
-  bookList: {
+  recentList: {
     gap: 0,
   },
-  bookListItem: {
+  recentItem: {
     flexDirection: 'row',
     gap: 16,
     paddingVertical: 16,
@@ -498,16 +498,16 @@ const styles = StyleSheet.create({
     right: 0,
     height: 3,
   },
-  listMeta: {
+  fileInfo: {
     flex: 1,
     gap: 2,
   },
-  listTitle: {
+  fileName: {
     fontSize: 14,
     fontWeight: '600',
     color: '#ffffff',
   },
-  listAuthor: {
+  fileMeta: {
     fontSize: 12,
     color: '#888',
   },

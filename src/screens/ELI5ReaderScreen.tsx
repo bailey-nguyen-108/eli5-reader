@@ -41,8 +41,7 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
   const [currentChapterId, setCurrentChapterId] = useState('');
   const [isHighlightedSelection, setIsHighlightedSelection] = useState(false);
   const [eli5Phrases, setEli5Phrases] = useState<string[]>([]); // Track ELI5'd phrases
-  const [contentHeight, setContentHeight] = useState(0);
-  const [scrollHeight, setScrollHeight] = useState(0);
+  const [showNavMenu, setShowNavMenu] = useState(false);
 
   // Redirect to library if no book is selected
   useEffect(() => {
@@ -161,7 +160,7 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
       // Show error in the explanation
       const errorTerm: ELI5Term = {
         ...loadingTerm,
-        explanation: `Failed to get AI explanation. Please check your Claude API key in Settings. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        explanation: `Failed to get AI explanation. Please check your OpenAI API key. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
 
       setSelectedTerm(errorTerm);
@@ -333,6 +332,11 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
     window.getSelection()?.removeAllRanges();
   };
 
+  const handleNavigateFromMenu = (screen: 'Library' | 'Notebook') => {
+    setShowNavMenu(false);
+    navigation.navigate(screen);
+  };
+
   // Save reading progress with debouncing
   const saveProgress = useCallback(
     debounce(async (scrollY: number, maxScroll: number) => {
@@ -358,9 +362,6 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
     const scrollY = contentOffset.y;
     const maxScroll = contentSize.height - layoutMeasurement.height;
 
-    setContentHeight(contentSize.height);
-    setScrollHeight(layoutMeasurement.height);
-
     // Save progress
     saveProgress(scrollY, maxScroll);
   };
@@ -381,18 +382,38 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
         </View>
         <TouchableOpacity
           style={styles.menuBtn}
-          onPress={() => navigation.navigate('Library')}
+          onPress={() => setShowNavMenu(prev => !prev)}
         >
           <Svg width="20" height="20" viewBox="0 0 24 24">
             <Path
-              d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+              d="M4 7h16M4 12h16M4 17h16"
               stroke="white"
               strokeWidth="2"
+              strokeLinecap="round"
               fill="none"
             />
           </Svg>
         </TouchableOpacity>
       </View>
+
+      {showNavMenu && (
+        <View style={styles.navMenu}>
+          <TouchableOpacity
+            style={styles.navMenuItem}
+            onPress={() => handleNavigateFromMenu('Library')}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.navMenuText}>Library</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.navMenuItem, styles.navMenuItemLast]}
+            onPress={() => handleNavigateFromMenu('Notebook')}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.navMenuText}>Notebook</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Reader Content - Infinite Scroll */}
       <ScrollView
@@ -407,12 +428,6 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
         <View style={styles.readingContent} onStartShouldSetResponder={() => true}>
           {currentBook.content.chapters.map((chapter, chapterIndex) => (
             <View key={chapter.id} style={styles.chapterSection}>
-              {/* Chapter Title */}
-              <View style={styles.chapterHeader}>
-                <View style={styles.metaDot} />
-                <Text style={styles.chapterTitle}>{chapter.title}</Text>
-              </View>
-
               {/* Chapter Content */}
               {chapter.content.split('\n\n').filter(p => p.trim()).map((paragraph, paraIndex) => (
                 <Text
@@ -504,6 +519,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
+  navMenu: {
+    position: 'absolute',
+    top: 100,
+    right: 24,
+    minWidth: 164,
+    backgroundColor: 'rgba(16,16,16,0.98)',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    overflow: 'hidden',
+    zIndex: 20,
+  },
+  navMenuItem: {
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  navMenuItemLast: {
+    borderBottomWidth: 0,
+  },
+  navMenuText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
   readerContainer: {
     flex: 1,
   },
@@ -511,12 +553,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 20,
     paddingBottom: 80,
-  },
-  metaDot: {
-    width: 8,
-    height: 8,
-    backgroundColor: '#4DFF7E',
-    borderRadius: 4,
   },
   readingContent: {
     maxWidth: 600,
@@ -538,20 +574,5 @@ const styles = StyleSheet.create({
   },
   chapterSection: {
     marginBottom: 60,
-  },
-  chapterHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 32,
-    paddingTop: 20,
-  },
-  chapterTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#ffffff',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    opacity: 0.8,
   },
 });

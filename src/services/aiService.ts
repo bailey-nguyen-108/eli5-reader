@@ -1,14 +1,14 @@
 /**
- * AI Service - Claude API integration for ELI5 explanations
- * Uses Claude Haiku model for fast, affordable explanations
+ * AI Service - OpenAI GPT API integration for ELI5 explanations
+ * Uses GPT models for fast, affordable explanations
  * Implements caching to reduce API costs
  */
 
 import StorageService from './storage';
 
-// Claude API configuration
-const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
-const CLAUDE_MODEL = 'claude-3-haiku-20240307'; // Fast and cheap model
+// OpenAI API configuration
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+const DEFAULT_GPT_MODEL = 'gpt-4o-mini';
 const MAX_TOKENS = 250; // Limit output for cost efficiency
 
 interface ELI5Response {
@@ -23,11 +23,17 @@ interface ELI5Response {
  */
 function generateCacheKey(term: string, context: string): string {
   const normalized = `${term.toLowerCase()}-${context.substring(0, 100).toLowerCase()}`;
-  return `eli5_${btoa(normalized).replace(/[^a-zA-Z0-9]/g, '')}`;
+  let hash = 0;
+
+  for (let i = 0; i < normalized.length; i += 1) {
+    hash = (hash * 31 + normalized.charCodeAt(i)) >>> 0;
+  }
+
+  return `eli5_${hash.toString(16)}`;
 }
 
 /**
- * Get ELI5 explanation from Claude API
+ * Get ELI5 explanation from OpenAI's chat completions API
  */
 export async function getELI5Explanation(
   term: string,
@@ -44,14 +50,19 @@ export async function getELI5Explanation(
       return cached;
     }
 
-    // Get API key from storage if not provided
+    // Resolve API key from environment or saved settings if not provided explicitly.
     if (!apiKey) {
       const settings = await StorageService.getSettings();
-      apiKey = settings.claudeApiKey;
+      apiKey =
+        process.env.EXPO_PUBLIC_OPENAI_API_KEY ||
+        settings.openaiApiKey ||
+        settings.claudeApiKey;
     }
 
     if (!apiKey) {
-      throw new Error('Claude API key not configured. Please add your API key in Settings.');
+      throw new Error(
+        'OpenAI API key not configured. Add EXPO_PUBLIC_OPENAI_API_KEY or save openaiApiKey in app settings.'
+      );
     }
 
     console.log('Fetching AI explanation for:', term);
@@ -76,18 +87,27 @@ Respond in JSON format:
   "field": "category (e.g., Science, History, Technology, Business, Literature, etc.)"
 }`;
 
-    // Call Claude API
-    const response = await fetch(CLAUDE_API_URL, {
+    const settings = await StorageService.getSettings();
+    const model = settings.preferredModel || DEFAULT_GPT_MODEL;
+
+    // Call OpenAI API
+    const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: CLAUDE_MODEL,
+        model,
         max_tokens: MAX_TOKENS,
+        temperature: 0.3,
+        response_format: { type: 'json_object' },
         messages: [
+          {
+            role: 'system',
+            content:
+              'You explain selected book phrases in plain language. Return valid JSON only.',
+          },
           {
             role: 'user',
             content: prompt,
@@ -97,12 +117,12 @@ Respond in JSON format:
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'Failed to get AI explanation');
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.error?.message || 'Failed to get AI explanation');
     }
 
     const data = await response.json();
-    const content = data.content[0]?.text;
+    const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
       throw new Error('No response from AI');
@@ -138,7 +158,7 @@ Respond in JSON format:
 
     // Return fallback explanation
     return {
-      explanation: `This is a placeholder explanation for "${term}". To get AI-powered explanations, please configure your Claude API key in Settings. You can get an API key from https://console.anthropic.com/`,
+      explanation: `This is a placeholder explanation for "${term}". To get AI-powered explanations, add an OpenAI API key with EXPO_PUBLIC_OPENAI_API_KEY or save openaiApiKey in app settings.`,
       simpleTerm: term.split(' ')[0],
       complexity: 'Medium',
       field: 'General',
@@ -167,15 +187,14 @@ export function extractContext(fullText: string, selectionIndex: number, context
  */
 export async function validateApiKey(apiKey: string): Promise<boolean> {
   try {
-    const response = await fetch(CLAUDE_API_URL, {
+    const response = await fetch(OPENAI_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: CLAUDE_MODEL,
+        model: DEFAULT_GPT_MODEL,
         max_tokens: 10,
         messages: [
           {

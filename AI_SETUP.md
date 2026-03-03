@@ -1,55 +1,37 @@
 # How to Enable AI-Powered ELI5 Explanations
 
-Your ELI5 Reader now supports real AI explanations using Claude API! Follow these steps to set it up.
+Your ELI5 Reader supports real AI explanations using the OpenAI GPT API.
 
-## Step 1: Get Your Claude API Key
+## Step 1: Get Your OpenAI API Key
 
-1. **Create an Anthropic account:**
-   - Go to https://console.anthropic.com/
-   - Sign up for an account (if you don't have one)
+1. Create or sign in to your OpenAI account at https://platform.openai.com/
+2. Go to API keys and create a new secret key
+3. Copy the key and keep it private
 
-2. **Add credits to your account:**
-   - Go to Settings → Billing
-   - Add at least $5 in credits
-   - Claude Haiku costs ~$0.001 per explanation (very cheap!)
+## Step 2: Add the Key to the App
 
-3. **Generate an API key:**
-   - Go to Settings → API Keys
-   - Click "Create Key"
-   - Copy your API key (starts with `sk-ant-`)
-   - Save it somewhere safe!
+### Recommended: Expo environment variable
 
-## Step 2: Add API Key to Your App
+Create a `.env` file in the project root:
 
-### Method 1: Using Browser Console (Quick & Easy)
-
-1. Open your app in the browser
-2. Open Developer Tools (F12 or Cmd+Option+I on Mac)
-3. Go to the "Console" tab
-4. Paste this code and replace `YOUR_API_KEY` with your actual key:
-
-```javascript
-// Add your Claude API key
-localStorage.setItem('@eli5_settings', JSON.stringify({
-  claudeApiKey: 'sk-ant-api03-YOUR_ACTUAL_KEY_HERE',
-  cacheEnabled: true,
-  cacheExpirationDays: 30,
-  preferredModel: 'haiku'
-}));
-
-// Verify it was saved
-console.log('Settings saved!');
+```bash
+EXPO_PUBLIC_OPENAI_API_KEY=sk-proj-your-key-here
 ```
 
-5. Refresh the page
+Then restart Expo so the env var is picked up.
 
-### Method 2: Create a Settings Screen (Future Enhancement)
+### Alternative: Save it in local app settings
 
-We'll add a proper Settings screen where you can:
-- Add/update your API key
-- Toggle caching on/off
-- Choose between Haiku (faster/cheaper) and Sonnet (smarter/pricier)
-- View your usage stats
+If you are testing in the browser, you can save it directly:
+
+```javascript
+localStorage.setItem('@eli5_settings', JSON.stringify({
+  openaiApiKey: 'sk-proj-your-key-here',
+  cacheEnabled: true,
+  cacheExpirationDays: 30,
+  preferredModel: 'gpt-4o-mini'
+}));
+```
 
 ## Step 3: Test It Out
 
@@ -62,8 +44,8 @@ We'll add a proper Settings screen where you can:
 ## How It Works
 
 ### AI Model
-- **Claude 3 Haiku** - Fast and affordable AI model
-- **Cost**: ~$0.001 per explanation (100 explanations ≈ $0.10)
+- **GPT-4o mini** - Fast and affordable model for short explanations
+- **Cost**: typically very low for short ELI5 responses
 - **Speed**: 1-2 seconds per response
 
 ### Caching
@@ -77,13 +59,13 @@ We'll add a proper Settings screen where you can:
 
 ## Troubleshooting
 
-### "Please configure your Claude API key in Settings"
+### "OpenAI API key not configured"
 - You haven't added your API key yet
-- Follow Method 1 above to add it
+- Add `EXPO_PUBLIC_OPENAI_API_KEY` or save `openaiApiKey` in local storage
 
 ### "Failed to get AI explanation"
 - Check your API key is correct
-- Ensure you have credits in your Anthropic account
+- Ensure your OpenAI account has billing enabled
 - Check browser console for detailed error
 
 ### "No response from AI"
@@ -91,39 +73,18 @@ We'll add a proper Settings screen where you can:
 - You might be out of credits
 - Network issue - check your internet connection
 
-## Cost Estimation
-
-Claude Haiku pricing (as of 2024):
-- **Input**: $0.25 per million tokens
-- **Output**: $1.25 per million tokens
-
-For ELI5 explanations:
-- Average input: ~300 tokens (term + context)
-- Average output: ~100 tokens (2-3 sentence explanation)
-- **Cost per explanation**: ~$0.0002 to $0.0005
-
-With $5 in credits:
-- **~10,000 to 25,000 explanations**
-- More than enough for extensive reading!
-
 ## Privacy & Security
 
-- Your API key is stored locally in browser storage
-- Never shared or sent anywhere except Anthropic's API
+- Your API key is stored locally if you use browser storage
+- Never shared or sent anywhere except OpenAI's API
 - Your books and explanations stay on your device
-- Only the selected term + context is sent to Claude
+- Only the selected term + context is sent to OpenAI
 
 ## Next Steps
 
 Future enhancements:
 1. **Settings Screen** - Manage API key, preferences, and usage
 2. **Usage Dashboard** - Track how many explanations you've used
-3. **Multiple Models** - Choose between Haiku, Sonnet, or Opus
+3. **Model Selection** - Choose between GPT models
 4. **Offline Mode** - Use cached explanations without internet
 5. **Export Explanations** - Save your notebook to PDF or markdown
-
----
-
-**Your ELI5 Reader is ready for AI-powered learning! 🚀**
-
-Start reading smarter with personalized explanations for every complex term you encounter.

@@ -77,8 +77,9 @@ export interface ELI5Cache {
 
 // App settings
 export interface AppSettings {
+  openaiApiKey?: string;
   claudeApiKey?: string;
-  preferredModel?: string; // 'haiku' | 'sonnet'
+  preferredModel?: string; // e.g. 'gpt-4o-mini'
   cacheEnabled?: boolean;
   cacheExpirationDays?: number;
 }

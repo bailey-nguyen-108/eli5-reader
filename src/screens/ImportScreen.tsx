@@ -31,7 +31,7 @@ interface ImportScreenProps {
 export default function ImportScreen({ navigation }: ImportScreenProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [menuOpenBookId, setMenuOpenBookId] = useState<string | null>(null);
-  const { books, addBook, setCurrentBook, deleteBook } = useAppContext();
+  const { books, addBook, openBook, deleteBook } = useAppContext();
 
   // Get recent uploads (last 5 books, sorted by upload date)
   const recentFiles = useMemo(() => {
@@ -109,9 +109,6 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
           // Save book to storage
           await addBook(book);
 
-          // Set as current book and navigate to reader
-          setCurrentBook(book);
-
           Alert.alert(
             'Book Imported',
             `"${book.title}" has been added to your library.\n\nChapters detected: ${book.content.chapters.length}`,
@@ -122,7 +119,10 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
               },
               {
                 text: 'Start Reading',
-                onPress: () => navigation.navigate('Reader'),
+                onPress: async () => {
+                  await openBook(book);
+                  navigation.navigate('Reader');
+                },
               },
             ]
           );
@@ -143,8 +143,7 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
   };
 
   const handleRecentFilePress = (book: Book) => {
-    setCurrentBook(book);
-    navigation.navigate('Reader');
+    openBook(book).then(() => navigation.navigate('Reader'));
   };
 
   const handleDeleteBook = (book: Book) => {

@@ -268,14 +268,14 @@ class StorageService {
         : {
             cacheEnabled: true,
             cacheExpirationDays: 30,
-            preferredModel: 'haiku',
+            preferredModel: 'gpt-4o-mini',
           };
     } catch (error) {
       console.error('Error loading settings:', error);
       return {
         cacheEnabled: true,
         cacheExpirationDays: 30,
-        preferredModel: 'haiku',
+        preferredModel: 'gpt-4o-mini',
       };
     }
   }

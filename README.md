@@ -172,30 +172,31 @@ The app:
 
 The app currently uses demo data for AI summaries. To integrate with real AI:
 
-1. Choose an AI provider (OpenAI, Anthropic Claude, etc.)
-2. Update `src/services/aiService.ts`:
+1. Create an OpenAI API key at https://platform.openai.com/
+2. Add `EXPO_PUBLIC_OPENAI_API_KEY=your_key_here` to `.env`
+3. Restart Expo and use the existing ELI5 flow
 
 ```typescript
-export async function generateBookSummary(
-  bookText: string,
-  title: string
-): Promise<BookSummary> {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+export async function getELI5Explanation(term: string, context: string) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': YOUR_API_KEY,
+      Authorization: `Bearer ${process.env.EXPO_PUBLIC_OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'claude-3-opus-20240229',
-      max_tokens: 4096,
+      model: 'gpt-4o-mini',
+      max_tokens: 250,
+      response_format: { type: 'json_object' },
       messages: [{
         role: 'user',
-        content: `Analyze this book: ${bookText}...`
+        content: `Explain "${term}" like I'm 5 using this context: ${context}`
       }]
     })
   });
-  // Process response...
+
+  const data = await response.json();
+  return JSON.parse(data.choices[0].message.content);
 }
 ```
 
