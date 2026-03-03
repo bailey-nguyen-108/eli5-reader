@@ -44,6 +44,8 @@ interface PendingImport {
 export default function ImportScreen({ navigation }: ImportScreenProps) {
   const insets = useSafeAreaInsets();
   const [isUploading, setIsUploading] = useState(false);
+  const [isProcessingBook, setIsProcessingBook] = useState(false);
+  const [processingFileName, setProcessingFileName] = useState('');
   const [menuOpenBookId, setMenuOpenBookId] = useState<string | null>(null);
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const { books, addBook, openBook, deleteBook } = useAppContext();
@@ -76,6 +78,9 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
           const fileName = file.name;
           const extension = fileName.split('.').pop()?.toLowerCase();
           const format = extension?.toUpperCase() as any;
+          setIsUploading(false);
+          setIsProcessingBook(true);
+          setProcessingFileName(fileName);
 
           // Read file content based on type
           let fileContent: string | ArrayBuffer;
@@ -110,6 +115,8 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
           console.error('Parse error:', parseError);
           Alert.alert('Import Error', parseError.message || 'Failed to parse file');
         } finally {
+          setIsProcessingBook(false);
+          setProcessingFileName('');
           setIsUploading(false);
         }
       };
@@ -259,10 +266,12 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
             </Svg>
           </View>
           <Text style={styles.uploadText}>
-            {isUploading ? 'Selecting...' : 'Select a book or file'}
+            {isUploading ? 'Selecting...' : isProcessingBook ? 'Processing book...' : 'Select a book or file'}
           </Text>
           <Text style={styles.uploadSubtext}>
-            Tap to browse your device or drag and drop files here
+            {isProcessingBook
+              ? 'Reading the file, extracting content, and preparing book details'
+              : 'Tap to browse your device or drag and drop files here'}
           </Text>
         </TouchableOpacity>
 
@@ -352,6 +361,22 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
 
       {/* Bottom Navigation */}
       <NavigationBar />
+
+      {isProcessingBook && (
+        <View style={styles.processingOverlay}>
+          <View style={styles.processingCard}>
+            <Text style={styles.processingTitle}>Processing book...</Text>
+            <Text style={styles.processingSubtitle}>
+              Extracting content and preparing the title and author form.
+            </Text>
+            {processingFileName ? (
+              <Text style={styles.processingFileName} numberOfLines={1}>
+                {processingFileName}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+      )}
 
       {pendingImport && (
         <View style={styles.modalOverlay}>
@@ -625,6 +650,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
     zIndex: 200,
+  },
+  processingOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    zIndex: 190,
+  },
+  processingCard: {
+    backgroundColor: '#111111',
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    gap: 12,
+  },
+  processingTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  processingSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: 'rgba(255,255,255,0.65)',
+  },
+  processingFileName: {
+    fontSize: 13,
+    color: '#4DFF7E',
+    fontWeight: '600',
   },
   modalCard: {
     backgroundColor: '#111111',

@@ -181,16 +181,14 @@ export default function LibraryScreen({ navigation }: LibraryScreenProps) {
                     <View style={styles.hairlineRule} />
                     <View style={[styles.accentStripe, { backgroundColor: book.accentColor }]} />
                   </View>
-                  {book.readingProgress && (
-                    <View style={styles.progressContainer}>
-                      <View
-                        style={[
-                          styles.progressBar,
-                          { width: `${book.readingProgress.percentComplete}%` },
-                        ]}
-                      />
-                    </View>
-                  )}
+                  <View style={styles.progressContainer}>
+                    <View
+                      style={[
+                        styles.progressBar,
+                        { width: `${book.readingProgress?.percentComplete || 0}%` },
+                      ]}
+                    />
+                  </View>
                   <View style={styles.bookInfo}>
                     <Text style={styles.bookTitle}>{book.title}</Text>
                     <Text style={styles.bookAuthor}>{book.author}</Text>
