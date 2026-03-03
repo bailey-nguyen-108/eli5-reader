@@ -1,18 +1,20 @@
 {
   "expo": {
-    "name": "temp-app",
-    "slug": "temp-app",
+    "name": "ELI5 Reader",
+    "slug": "eli5-reader",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "description": "Read books with simple AI explanations and save insights to your notebook.",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#050505"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.baileynguyen.eli5reader"
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +26,18 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "ELI5 Reader",
+      "shortName": "ELI5",
+      "description": "Read books with simple AI explanations and save insights to your notebook.",
+      "lang": "en",
+      "scope": "/",
+      "display": "standalone",
+      "startUrl": "/",
+      "orientation": "portrait",
+      "themeColor": "#050505",
+      "backgroundColor": "#050505",
+      "barStyle": "black-translucent"
     }
   }
 }

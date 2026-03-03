@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../App';
 import NavigationBar from '../components/NavigationBar';
 import ImportSticker from '../components/ImportSticker';
@@ -35,6 +36,7 @@ interface BookCollection {
 }
 
 export default function NotebookScreen({ navigation }: NotebookScreenProps) {
+  const insets = useSafeAreaInsets();
   const { books, savedTerms, deleteTerm } = useAppContext();
   const [searchText, setSearchText] = useState('');
   const [expandedBooks, setExpandedBooks] = useState<Set<string>>(new Set());
@@ -118,7 +120,7 @@ export default function NotebookScreen({ navigation }: NotebookScreenProps) {
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.pageTitle}>
           <Text style={styles.pageTitleMain}>My</Text>
           <Text style={styles.pageTitleSub}>Notebook</Text>

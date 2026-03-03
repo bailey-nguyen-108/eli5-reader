@@ -113,6 +113,23 @@ npm run android # Android Emulator
 npm run web     # Web browser
 ```
 
+## iPhone PWA Install
+
+This app can be installed to your iPhone home screen as a web app:
+
+1. Deploy the app and open it in Safari on iPhone
+2. Tap the Share button
+3. Tap `Add to Home Screen`
+4. Launch `ELI5 Reader` from the home screen
+
+Current limitations:
+- This phase focuses on installability and standalone launch, not guaranteed offline reading
+- AI explanations still require network access
+- TXT/EPUB import depends on what iPhone Safari/PWA file picking allows
+- The current OpenAI client-side key flow is for prototype/testing use only
+
+For a production launch, move OpenAI requests behind a server route so the API key is not exposed to the client bundle.
+
 ## Project Structure
 
 ```

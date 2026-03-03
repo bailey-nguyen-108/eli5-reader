@@ -11,6 +11,7 @@ import {
 import Svg, { Path, Circle } from 'react-native-svg';
 import * as DocumentPicker from 'expo-document-picker';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../App';
 import ImportSticker from '../components/ImportSticker';
 import NavigationBar from '../components/NavigationBar';
@@ -29,6 +30,7 @@ interface ImportScreenProps {
 }
 
 export default function ImportScreen({ navigation }: ImportScreenProps) {
+  const insets = useSafeAreaInsets();
   const [isUploading, setIsUploading] = useState(false);
   const [menuOpenBookId, setMenuOpenBookId] = useState<string | null>(null);
   const { books, addBook, openBook, deleteBook } = useAppContext();
@@ -168,7 +170,7 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.pageTitle}>
           <Text style={styles.pageTitleMain}>IMPORT</Text>
           <Text style={styles.pageTitleSub}>Knowledge</Text>

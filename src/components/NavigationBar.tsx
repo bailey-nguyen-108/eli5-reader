@@ -3,6 +3,7 @@ import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../App';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -10,13 +11,14 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function NavigationBar() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
+  const insets = useSafeAreaInsets();
 
   const isLibrary = route.name === 'Library';
   const isImport = route.name === 'Import';
   const isNotebook = route.name === 'Notebook';
 
   return (
-    <View style={styles.navIsland}>
+    <View style={[styles.navIsland, { bottom: Math.max(insets.bottom, 18) + 14 }]}>
       {/* Home Icon - Library */}
       <TouchableOpacity
         style={styles.navItem}
@@ -74,7 +76,6 @@ export default function NavigationBar() {
 const styles = StyleSheet.create({
   navIsland: {
     position: 'absolute',
-    bottom: 32,
     left: '50%',
     transform: [{ translateX: -92 }],
     backgroundColor: 'rgba(25, 25, 25, 0.95)',

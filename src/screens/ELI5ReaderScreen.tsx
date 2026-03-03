@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../App';
 import ELI5Sheet from '../components/ELI5Sheet';
 import SelectionMenu from '../components/SelectionMenu';
@@ -30,6 +31,7 @@ interface ELI5ReaderScreenProps {
 }
 
 export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) {
+  const insets = useSafeAreaInsets();
   const { currentBook, saveTerm, updateReadingProgress, getReadingProgress } = useAppContext();
   const scrollViewRef = useRef<ScrollView>(null);
   const [selectedTerm, setSelectedTerm] = useState<ELI5Term | null>(null);
@@ -371,7 +373,7 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.brand}>
           <Text style={styles.brandMain} numberOfLines={1} ellipsizeMode="tail">
             {currentBook.title}
@@ -397,7 +399,7 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
       </View>
 
       {showNavMenu && (
-        <View style={styles.navMenu}>
+        <View style={[styles.navMenu, { top: insets.top + 62 }]}>
           <TouchableOpacity
             style={styles.navMenuItem}
             onPress={() => handleNavigateFromMenu('Library')}

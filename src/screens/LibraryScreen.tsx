@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import Svg, { Path, Circle, Rect, Line } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../App';
 import NavigationBar from '../components/NavigationBar';
 import ImportSticker from '../components/ImportSticker';
@@ -27,6 +28,7 @@ interface LibraryScreenProps {
 }
 
 export default function LibraryScreen({ navigation }: LibraryScreenProps) {
+  const insets = useSafeAreaInsets();
   const [searchText, setSearchText] = useState('');
   const [menuOpenBookId, setMenuOpenBookId] = useState<string | null>(null);
   const { books, openBook, deleteBook } = useAppContext();
@@ -91,7 +93,7 @@ export default function LibraryScreen({ navigation }: LibraryScreenProps) {
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <View style={styles.pageTitle}>
           <Text style={styles.pageTitleMain}>MY</Text>
           <Text style={styles.pageTitleSub}>Library</Text>
