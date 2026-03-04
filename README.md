@@ -130,6 +130,29 @@ Current limitations:
 
 For a production launch, move OpenAI requests behind a server route so the API key is not exposed to the client bundle.
 
+## TestFlight Build
+
+This repo is now set up for Expo EAS iOS builds.
+
+Repo config:
+- [eas.json](/Users/baileynguyen/Library/CloudStorage/OneDrive-Personal/playground/book-summary/eas.json)
+- bundle identifier: `com.baileynguyen.eli5reader`
+
+Typical commands:
+
+```bash
+npx eas login
+npx eas build:configure
+npm run eas:build:ios
+npm run eas:submit:ios
+```
+
+App Store Connect steps you still need to do manually:
+- Create the app record with bundle ID `com.baileynguyen.eli5reader`
+- Fill in required app metadata in App Store Connect
+- Wait for Apple to process the uploaded build
+- Add internal or external TestFlight testers
+
 ## Project Structure
 
 ```

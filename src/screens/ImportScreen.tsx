@@ -8,6 +8,7 @@ import {
   StatusBar,
   Alert,
   TextInput,
+  Platform,
 } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import * as DocumentPicker from 'expo-document-picker';
@@ -20,6 +21,7 @@ import { useAppContext } from '../context/AppContext';
 import { parseFile, readFileAsText, readFileAsArrayBuffer } from '../services/fileParser';
 import { generateId, generateBookAbbreviation, generateAccentColor } from '../utils/helpers';
 import { Book } from '../types/models';
+import { confirmAction, notify } from '../utils/dialogs';
 
 type ImportScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -57,74 +59,117 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
       .slice(0, 5);
   }, [books]);
 
+  const createPendingImport = (
+    parseResult: Awaited<ReturnType<typeof parseFile>>,
+    fileName: string,
+    format: Book['format'],
+    fileSize: number
+  ) => {
+    const defaultTitle = parseResult.metadata?.title || fileName.replace(/\.[^/.]+$/, '');
+    const defaultAuthor = parseResult.metadata?.author || 'Unknown Author';
+
+    setPendingImport({
+      title: defaultTitle,
+      author: defaultAuthor,
+      defaultTitle,
+      defaultAuthor,
+      fileName,
+      format,
+      fileSize,
+      content: parseResult.content,
+    });
+  };
+
   const handleSelectFile = async () => {
     try {
       setIsUploading(true);
 
-      // For web, use input element
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.txt,.epub';
+      if (Platform.OS === 'web') {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.txt,.epub';
 
-      input.onchange = async (e: any) => {
-        const file = e.target.files[0];
-        if (!file) {
-          setIsUploading(false);
-          return;
-        }
-
-        try {
-          // Get file extension
-          const fileName = file.name;
-          const extension = fileName.split('.').pop()?.toLowerCase();
-          const format = extension?.toUpperCase() as any;
-          setIsUploading(false);
-          setIsProcessingBook(true);
-          setProcessingFileName(fileName);
-
-          // Read file content based on type
-          let fileContent: string | ArrayBuffer;
-          if (extension === 'txt') {
-            fileContent = await readFileAsText(file);
-          } else if (extension === 'epub') {
-            fileContent = await readFileAsArrayBuffer(file);
-          } else if (extension === 'pdf') {
-            throw new Error('PDF support is temporarily disabled due to technical limitations. Please convert your PDF to TXT or use EPUB format. You can use online converters like https://www.zamzar.com/');
-          } else {
-            throw new Error(`Unsupported file format: ${extension}. Supported formats: TXT, EPUB`);
+        input.onchange = async (e: any) => {
+          const file = e.target.files[0];
+          if (!file) {
+            setIsUploading(false);
+            return;
           }
 
-          // Parse the file
-          const parseResult = await parseFile('', fileName, fileContent);
+          try {
+            const fileName = file.name;
+            const extension = fileName.split('.').pop()?.toLowerCase();
+            const format = (extension?.toUpperCase() || 'TXT') as Book['format'];
+            setIsUploading(false);
+            setIsProcessingBook(true);
+            setProcessingFileName(fileName);
 
-          // Use metadata from file if available, otherwise prompt
-          const defaultTitle = parseResult.metadata?.title || fileName.replace(/\.[^/.]+$/, '');
-          const defaultAuthor = parseResult.metadata?.author || 'Unknown Author';
+            let fileContent: string | ArrayBuffer;
+            if (extension === 'txt') {
+              fileContent = await readFileAsText(file);
+            } else if (extension === 'epub') {
+              fileContent = await readFileAsArrayBuffer(file);
+            } else if (extension === 'pdf') {
+              throw new Error('PDF support is temporarily disabled due to technical limitations. Please convert your PDF to TXT or use EPUB format.');
+            } else {
+              throw new Error(`Unsupported file format: ${extension}. Supported formats: TXT, EPUB`);
+            }
 
-          setPendingImport({
-            title: defaultTitle,
-            author: defaultAuthor,
-            defaultTitle,
-            defaultAuthor,
-            fileName,
-            format: (format || 'TXT') as Book['format'],
-            fileSize: file.size,
-            content: parseResult.content,
-          });
-        } catch (parseError: any) {
-          console.error('Parse error:', parseError);
-          Alert.alert('Import Error', parseError.message || 'Failed to parse file');
-        } finally {
-          setIsProcessingBook(false);
-          setProcessingFileName('');
-          setIsUploading(false);
-        }
-      };
+            const parseResult = await parseFile('', fileName, fileContent);
+            createPendingImport(parseResult, fileName, format, file.size);
+          } catch (parseError: any) {
+            console.error('Parse error:', parseError);
+            Alert.alert('Import Error', parseError.message || 'Failed to parse file');
+          } finally {
+            setIsProcessingBook(false);
+            setProcessingFileName('');
+            setIsUploading(false);
+          }
+        };
 
-      input.click();
+        input.click();
+        return;
+      }
+
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['text/plain', 'application/epub+zip'],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (result.canceled || !result.assets.length) {
+        setIsUploading(false);
+        return;
+      }
+
+      const asset = result.assets[0];
+      const fileName = asset.name;
+      const extension = fileName.split('.').pop()?.toLowerCase();
+      const format = (extension?.toUpperCase() || 'TXT') as Book['format'];
+
+      setIsUploading(false);
+      setIsProcessingBook(true);
+      setProcessingFileName(fileName);
+
+      let fileContent: string | ArrayBuffer;
+      const response = await fetch(asset.uri);
+      if (extension === 'txt') {
+        fileContent = await response.text();
+      } else if (extension === 'epub') {
+        fileContent = await response.arrayBuffer();
+      } else if (extension === 'pdf') {
+        throw new Error('PDF support is temporarily disabled due to technical limitations. Please convert your PDF to TXT or use EPUB format.');
+      } else {
+        throw new Error(`Unsupported file format: ${extension}. Supported formats: TXT, EPUB`);
+      }
+
+      const parseResult = await parseFile(asset.uri, fileName, fileContent);
+      createPendingImport(parseResult, fileName, format, asset.size ?? 0);
     } catch (error) {
-      Alert.alert('Error', 'Failed to import document');
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to import document');
       console.error(error);
+      setIsProcessingBook(false);
+      setProcessingFileName('');
       setIsUploading(false);
     }
   };
@@ -191,20 +236,20 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
   };
 
   const handleDeleteBook = (book: Book) => {
-    const confirmed = window.confirm(
+    confirmAction(
+      'Delete Book',
       `Are you sure you want to delete "${book.title}"? This will also delete all saved terms from this book.`
-    );
-
-    if (confirmed) {
+    ).then((confirmed) => {
+      if (!confirmed) return;
       deleteBook(book.id)
         .then(() => {
-          alert(`"${book.title}" has been deleted from your library.`);
+          notify('Book Deleted', `"${book.title}" has been deleted from your library.`);
         })
         .catch((error) => {
           console.error('Error deleting book:', error);
-          alert('Failed to delete book. Please try again.');
+          notify('Error', 'Failed to delete book. Please try again.');
         });
-    }
+    });
   };
 
   return (
@@ -617,7 +662,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   menuOverlay: {
-    position: 'fixed',
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,

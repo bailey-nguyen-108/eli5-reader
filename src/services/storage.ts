@@ -293,13 +293,13 @@ class StorageService {
 
   async clearAll(): Promise<void> {
     try {
-      await AsyncStorage.multiRemove([
+      await Promise.all([
         STORAGE_KEYS.BOOKS,
         STORAGE_KEYS.SAVED_TERMS,
         STORAGE_KEYS.READING_PROGRESS,
         STORAGE_KEYS.ELI5_CACHE,
         STORAGE_KEYS.APP_SETTINGS,
-      ]);
+      ].map((key) => AsyncStorage.removeItem(key)));
     } catch (error) {
       console.error('Error clearing all data:', error);
       throw error;

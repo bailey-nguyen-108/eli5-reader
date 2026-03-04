@@ -9,6 +9,7 @@ import {
   Alert,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -88,7 +89,17 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
     );
   }
 
+  const buildPassageLabel = (paragraph: string) => {
+    const words = paragraph.trim().split(/\s+/).filter(Boolean);
+    const label = words.slice(0, 8).join(' ');
+    return words.length > 8 ? `${label}...` : label;
+  };
+
   const handleTextSelection = () => {
+    if (Platform.OS !== 'web') {
+      return;
+    }
+
     // Get selected text from the window selection
     const selection = window.getSelection();
     const selectedText = selection?.toString().trim();
@@ -118,14 +129,17 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
     }
   };
 
-  const handleELI5Click = async () => {
+  const requestELI5Explanation = async (
+    selectionValue: string,
+    contextValue: string
+  ) => {
     setShowSelectionMenu(false);
 
     // Show loading state
     const loadingTerm: ELI5Term = {
       id: generateId(),
-      term: currentSelection,
-      simpleTerm: currentSelection.split(' ')[0],
+      term: selectionValue,
+      simpleTerm: selectionValue.split(' ')[0],
       complexity: 'Medium',
       field: 'General',
       relatedCount: 2,
@@ -139,14 +153,14 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
     try {
       // Get AI explanation with context
       const aiResponse = await AIService.getELI5Explanation(
-        currentSelection,
-        currentSelectionContext
+        selectionValue,
+        contextValue
       );
 
       // Update with real explanation
       const newTerm: ELI5Term = {
         id: generateId(),
-        term: currentSelection,
+        term: selectionValue,
         simpleTerm: aiResponse.simpleTerm,
         complexity: aiResponse.complexity,
         field: aiResponse.field,
@@ -169,13 +183,34 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
     }
   };
 
+  const handleELI5Click = async () => {
+    await requestELI5Explanation(currentSelection, currentSelectionContext);
+  };
+
+  const handleNativeParagraphExplain = async (paragraph: string, chapterId: string) => {
+    const trimmedParagraph = paragraph.trim();
+    if (!trimmedParagraph) return;
+
+    const selectionValue = buildPassageLabel(trimmedParagraph);
+    setCurrentChapterId(chapterId);
+    setCurrentSelection(selectionValue);
+    setCurrentSelectionContext(trimmedParagraph);
+    setIsHighlightedSelection(false);
+
+    await requestELI5Explanation(selectionValue, trimmedParagraph);
+  };
+
   const handleCopy = () => {
     // Copy to clipboard
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(currentSelection);
+    } else {
+      Alert.alert('Copy Not Available', 'Copy is currently available in the web reader only.');
     }
     setShowSelectionMenu(false);
-    window.getSelection()?.removeAllRanges();
+    if (Platform.OS === 'web') {
+      window.getSelection()?.removeAllRanges();
+    }
   };
 
   const handleRemove = () => {
@@ -184,12 +219,9 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
       phrase => phrase.toLowerCase() !== currentSelection.toLowerCase()
     ));
     setShowSelectionMenu(false);
-    window.getSelection()?.removeAllRanges();
-  };
-
-  const handleTermPress = () => {
-    setSelectedTerm(sampleTerm);
-    setShowSheet(true);
+    if (Platform.OS === 'web') {
+      window.getSelection()?.removeAllRanges();
+    }
   };
 
   const handleSave = async () => {
@@ -231,7 +263,9 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
       setEli5Phrases([...eli5Phrases, selectedTerm.term]);
     }
     setShowSheet(false);
-    window.getSelection()?.removeAllRanges();
+    if (Platform.OS === 'web') {
+      window.getSelection()?.removeAllRanges();
+    }
   };
 
   const handleShare = () => {
@@ -331,7 +365,9 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
 
   const handleCloseSelectionMenu = () => {
     setShowSelectionMenu(false);
-    window.getSelection()?.removeAllRanges();
+    if (Platform.OS === 'web') {
+      window.getSelection()?.removeAllRanges();
+    }
   };
 
   const handleNavigateFromMenu = (screen: 'Library' | 'Notebook') => {
@@ -435,12 +471,21 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
                 <Text
                   key={`${chapter.id}-${paraIndex}`}
                   style={styles.paragraph}
-                  selectable={true}
-                  onMouseUp={(e) => {
-                    setCurrentChapterId(chapter.id);
-                    setCurrentSelectionContext(paragraph.trim());
-                    handleTextSelection();
-                  }}
+                  selectable={Platform.OS === 'web'}
+                  onLongPress={
+                    Platform.OS === 'web'
+                      ? undefined
+                      : () => handleNativeParagraphExplain(paragraph, chapter.id)
+                  }
+                  {...(Platform.OS === 'web'
+                    ? {
+                        onMouseUp: () => {
+                          setCurrentChapterId(chapter.id);
+                          setCurrentSelectionContext(paragraph.trim());
+                          handleTextSelection();
+                        },
+                      }
+                    : {})}
                 >
                   {renderHighlightedText(paragraph.trim())}
                 </Text>
@@ -451,7 +496,7 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
       </ScrollView>
 
       {/* Selection Menu */}
-      {showSelectionMenu && (
+      {showSelectionMenu && Platform.OS === 'web' && (
         <SelectionMenu
           onELI5={handleELI5Click}
           onCopy={handleCopy}

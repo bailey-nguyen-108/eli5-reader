@@ -17,6 +17,7 @@ import NavigationBar from '../components/NavigationBar';
 import ImportSticker from '../components/ImportSticker';
 import { useAppContext } from '../context/AppContext';
 import { Book } from '../types/models';
+import { confirmAction, notify } from '../utils/dialogs';
 
 type LibraryScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -72,20 +73,20 @@ export default function LibraryScreen({ navigation }: LibraryScreenProps) {
   };
 
   const handleDeleteBook = (book: Book) => {
-    const confirmed = window.confirm(
+    confirmAction(
+      'Delete Book',
       `Are you sure you want to delete "${book.title}"? This will also delete all saved terms from this book.`
-    );
-
-    if (confirmed) {
+    ).then((confirmed) => {
+      if (!confirmed) return;
       deleteBook(book.id)
         .then(() => {
-          alert(`"${book.title}" has been deleted from your library.`);
+          notify('Book Deleted', `"${book.title}" has been deleted from your library.`);
         })
         .catch((error) => {
           console.error('Error deleting book:', error);
-          alert('Failed to delete book. Please try again.');
+          notify('Error', 'Failed to delete book. Please try again.');
         });
-    }
+    });
   };
 
   return (
@@ -515,7 +516,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   menuOverlay: {
-    position: 'fixed',
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,

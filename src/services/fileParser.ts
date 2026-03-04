@@ -161,7 +161,7 @@ async function parseEPUBFile(arrayBuffer: ArrayBuffer): Promise<ParseResult> {
     const metadata = await book.loaded.metadata;
 
     // Get spine (reading order)
-    const spine = await book.loaded.spine;
+    const spine: any = await book.loaded.spine;
 
     let fullText = '';
 
@@ -178,7 +178,7 @@ async function parseEPUBFile(arrayBuffer: ArrayBuffer): Promise<ParseResult> {
 
         if (contents) {
           // Extract text from the document body
-          const body = contents.querySelector('body') || contents;
+          const body: any = contents.querySelector('body') || contents;
 
           // Get text with better paragraph preservation
           let text = '';
@@ -186,7 +186,7 @@ async function parseEPUBFile(arrayBuffer: ArrayBuffer): Promise<ParseResult> {
           // Process each paragraph-level element
           const elements = body.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, pre');
           if (elements.length > 0) {
-            elements.forEach((el) => {
+            elements.forEach((el: any) => {
               const textContent = el.textContent?.trim() || '';
               if (textContent) {
                 text += textContent + '\n\n';
@@ -194,7 +194,7 @@ async function parseEPUBFile(arrayBuffer: ArrayBuffer): Promise<ParseResult> {
             });
           } else {
             // Fallback to full body text if no block elements found
-            text = body.textContent || body.innerText || '';
+            text = body.textContent || '';
           }
 
           // Clean up excessive whitespace but preserve paragraph breaks
@@ -216,7 +216,7 @@ async function parseEPUBFile(arrayBuffer: ArrayBuffer): Promise<ParseResult> {
     if (!fullText.trim()) {
       console.warn('No text extracted using spine, trying alternative method');
 
-      const sections = await book.loaded.spine;
+      const sections: any = await book.loaded.spine;
       for (let i = 0; i < sections.items.length; i++) {
         try {
           const section = book.spine.get(i);

@@ -16,6 +16,7 @@ import NavigationBar from '../components/NavigationBar';
 import ImportSticker from '../components/ImportSticker';
 import { useAppContext } from '../context/AppContext';
 import { SavedTerm } from '../types/models';
+import { confirmAction, notify } from '../utils/dialogs';
 
 type NotebookScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -99,20 +100,20 @@ export default function NotebookScreen({ navigation }: NotebookScreenProps) {
   };
 
   const handleDeleteTerm = (termId: string, termName: string) => {
-    const confirmed = window.confirm(
+    confirmAction(
+      'Delete Term',
       `Are you sure you want to delete "${termName}" from your notebook?`
-    );
-
-    if (confirmed) {
+    ).then((confirmed) => {
+      if (!confirmed) return;
       deleteTerm(termId)
         .then(() => {
-          alert(`"${termName}" has been deleted from your notebook.`);
+          notify('Term Deleted', `"${termName}" has been deleted from your notebook.`);
         })
         .catch((error) => {
           console.error('Error deleting term:', error);
-          alert('Failed to delete term. Please try again.');
+          notify('Error', 'Failed to delete term. Please try again.');
         });
-    }
+    });
   };
 
   return (
