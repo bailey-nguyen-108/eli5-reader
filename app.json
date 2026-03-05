@@ -29,7 +29,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./public/favicon-spinner.svg",
+      "favicon": "./assets/favicon.png",
       "name": "ELI5 Reader",
       "shortName": "ELI5",
       "description": "Read books with simple AI explanations and save insights to your notebook.",
