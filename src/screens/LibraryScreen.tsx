@@ -172,6 +172,34 @@ export default function LibraryScreen({ navigation }: LibraryScreenProps) {
                   activeOpacity={0.7}
                 >
                   <View style={styles.coverArt}>
+                    <View style={styles.coverMenuContainer}>
+                      <TouchableOpacity
+                        style={styles.coverMenuButton}
+                        onPress={() => setMenuOpenBookId(menuOpenBookId === book.id ? null : book.id)}
+                        activeOpacity={0.7}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <Svg width="18" height="18" viewBox="0 0 24 24">
+                          <Circle cx="12" cy="12" r="1.5" fill="white" opacity="0.75" />
+                          <Circle cx="12" cy="5" r="1.5" fill="white" opacity="0.75" />
+                          <Circle cx="12" cy="19" r="1.5" fill="white" opacity="0.75" />
+                        </Svg>
+                      </TouchableOpacity>
+                      {menuOpenBookId === book.id && (
+                        <View style={styles.coverDropdownMenu}>
+                          <TouchableOpacity
+                            style={styles.menuItem}
+                            onPress={() => {
+                              setMenuOpenBookId(null);
+                              handleDeleteBook(book);
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.menuItemText}>Delete</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
                     <View style={styles.coverAbbr}>
                       {book.abbr.map((letter, index) => (
                         <Text key={index} style={styles.coverLetter}>
@@ -381,6 +409,36 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
     flexDirection: 'row',
+  },
+  coverMenuContainer: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 6,
+    alignItems: 'flex-end',
+  },
+  coverMenuButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coverDropdownMenu: {
+    marginTop: 6,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    minWidth: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   coverAbbr: {
     flexDirection: 'column',

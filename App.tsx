@@ -18,6 +18,7 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const SERVICE_WORKER_VERSION = '2026-03-03-1';
+const FAVICON_VERSION = '2026-03-05-1';
 
 const WEB_META = [
   { selector: 'meta[name="theme-color"]', tag: 'meta', attrs: { name: 'theme-color', content: '#050505' } },
@@ -59,6 +60,18 @@ export default function App() {
         Object.entries(attrs).forEach(([key, value]) => {
           element?.setAttribute(key, value);
         });
+      });
+
+      const faviconHref = `/favicon-spinner.svg?v=${FAVICON_VERSION}`;
+      ['icon', 'shortcut icon'].forEach((rel) => {
+        let icon = document.head.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null;
+        if (!icon) {
+          icon = document.createElement('link');
+          icon.rel = rel;
+          document.head.appendChild(icon);
+        }
+        icon.type = 'image/svg+xml';
+        icon.href = faviconHref;
       });
 
       let styleTag = document.getElementById('eli5-pwa-style') as HTMLStyleElement | null;

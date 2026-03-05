@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.baileynguyen.eli5reader"
+      "bundleIdentifier": "com.baileynguyen.eli5reader",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +29,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./public/favicon-spinner.svg",
       "name": "ELI5 Reader",
       "shortName": "ELI5",
       "description": "Read books with simple AI explanations and save insights to your notebook.",
@@ -38,6 +41,11 @@
       "themeColor": "#050505",
       "backgroundColor": "#050505",
       "barStyle": "black-translucent"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "fac50a86-dafc-4b4b-80c0-1e0ad46e2169"
+      }
     }
   }
 }

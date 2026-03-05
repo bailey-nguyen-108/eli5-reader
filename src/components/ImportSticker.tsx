@@ -9,7 +9,7 @@ export default function ImportSticker() {
     Animated.loop(
       Animated.timing(rotateAnim, {
         toValue: 1,
-        duration: 12000,
+        duration: 10000,
         useNativeDriver: true,
       })
     ).start();
@@ -22,7 +22,7 @@ export default function ImportSticker() {
 
   return (
     <Animated.View style={[styles.container, { transform: [{ rotate }] }]}>
-      <Svg width="100" height="100" viewBox="0 0 100 100">
+      <Svg width="80" height="80" viewBox="0 0 100 100">
         <Defs>
           <Path
             id="circle-path"
@@ -32,13 +32,13 @@ export default function ImportSticker() {
         <Circle cx="50" cy="50" r="48" fill="#4DFF7E" />
         <Text
           fill="black"
-          fontSize="12"
+          fontSize="14"
           fontWeight="700"
-          letterSpacing="3"
+          letterSpacing="2"
           fontFamily="Inter"
         >
-          <TextPath href="#circle-path" startOffset="0">
-            ELI5  •  READER  •  ELI5  •  READER  •
+          <TextPath href="#circle-path">
+            ELI5 • READER • ELI5 • READER •
           </TextPath>
         </Text>
         <Circle cx="50" cy="50" r="15" fill="black" />
@@ -55,8 +55,7 @@ export default function ImportSticker() {
 
 const styles = StyleSheet.create({
   container: {
-    width: 100,
-    height: 100,
-    opacity: 0.8,
+    width: 80,
+    height: 80,
   },
 });
