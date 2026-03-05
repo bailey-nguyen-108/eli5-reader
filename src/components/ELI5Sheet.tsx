@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   simpleTermText: {
-    fontFamily: 'Playfair Display, serif',
+    fontFamily: 'Georgia',
     fontStyle: 'italic',
     fontWeight: '400',
   },

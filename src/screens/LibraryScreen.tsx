@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   pageTitleSub: {
-    fontFamily: 'Playfair Display, serif',
+    fontFamily: 'Georgia',
     fontStyle: 'italic',
     fontSize: 29,
     fontWeight: '400',
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   coverLetter: {
-    fontFamily: 'Playfair Display, serif',
+    fontFamily: 'Georgia',
     fontStyle: 'italic',
     fontSize: 24,
     lineHeight: 26,
@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   thumbLetter: {
-    fontFamily: 'Playfair Display, serif',
+    fontFamily: 'Georgia',
     fontStyle: 'italic',
     fontSize: 14,
     lineHeight: 15,

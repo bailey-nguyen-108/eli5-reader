@@ -5,6 +5,7 @@
  */
 
 import StorageService from './storage';
+import Constants from 'expo-constants';
 
 // OpenAI API configuration
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
@@ -16,6 +17,18 @@ interface ELI5Response {
   simpleTerm: string;
   complexity: 'Easy' | 'Medium' | 'Hard';
   field: string;
+}
+
+function getExpoExtraOpenAIKey(): string | undefined {
+  const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, unknown>;
+  const candidates = [
+    extra.openaiApiKey,
+    extra.OPENAI_API_KEY,
+    extra.EXPO_PUBLIC_OPENAI_API_KEY,
+  ];
+
+  const key = candidates.find((candidate) => typeof candidate === 'string' && candidate.trim());
+  return typeof key === 'string' ? key.trim() : undefined;
 }
 
 /**
@@ -55,13 +68,14 @@ export async function getELI5Explanation(
       const settings = await StorageService.getSettings();
       apiKey =
         process.env.EXPO_PUBLIC_OPENAI_API_KEY ||
+        getExpoExtraOpenAIKey() ||
         settings.openaiApiKey ||
         settings.claudeApiKey;
     }
 
     if (!apiKey) {
       throw new Error(
-        'OpenAI API key not configured. Add EXPO_PUBLIC_OPENAI_API_KEY or save openaiApiKey in app settings.'
+        'OpenAI API key not configured. For TestFlight builds, set the key in app settings or configure EXPO_PUBLIC_OPENAI_API_KEY in EAS environment variables before building.'
       );
     }
 

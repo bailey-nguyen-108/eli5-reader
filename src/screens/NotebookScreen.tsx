@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   pageTitleSub: {
-    fontFamily: 'Playfair Display, serif',
+    fontFamily: 'Georgia',
     fontStyle: 'italic',
     fontSize: 29,
     fontWeight: '400',
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   bookSubtitle: {
-    fontFamily: 'Libre Baskerville, serif',
+    fontFamily: 'Georgia',
     fontStyle: 'italic',
     fontSize: 14,
     opacity: 0.6,
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   termSnippet: {
-    fontFamily: 'Libre Baskerville, serif',
+    fontFamily: 'Georgia',
     fontSize: 14,
     lineHeight: 21,
     color: '#aaaaaa',
