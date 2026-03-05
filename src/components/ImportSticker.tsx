@@ -37,9 +37,7 @@ export default function ImportSticker() {
           letterSpacing="2"
           fontFamily="Inter"
         >
-          <TextPath href="#circle-path">
-            ELI5 • READER • ELI5 • READER •
-          </TextPath>
+          <TextPath href="#circle-path">  Explain • Like • I'm • Five • </TextPath>
         </Text>
         <Circle cx="50" cy="50" r="15" fill="black" />
         <Path

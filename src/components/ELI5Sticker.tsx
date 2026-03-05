@@ -37,7 +37,7 @@ export default function ELI5Sticker() {
           letterSpacing="2"
           fontFamily="Inter"
         >
-          <TextPath href="#circle">Explain • Like • I'm • Five •</TextPath>
+          <TextPath href="#circle">  Explain • Like • I'm • Five • </TextPath>
         </Text>
         <Circle cx="50" cy="50" r="15" fill="black" />
         <Path

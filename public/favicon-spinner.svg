@@ -10,7 +10,7 @@
     letter-spacing="2"
     font-family="Inter, Arial, sans-serif"
   >
-    <textPath href="#ring">ELI5 • READER • ELI5 • READER •</textPath>
+    <textPath href="#ring">  Explain • Like • I'm • Five • </textPath>
   </text>
   <circle cx="50" cy="50" r="15" fill="#000000" />
   <path
