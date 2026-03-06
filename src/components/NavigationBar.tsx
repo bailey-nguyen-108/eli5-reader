@@ -16,6 +16,7 @@ export default function NavigationBar() {
   const isLibrary = route.name === 'Library';
   const isImport = route.name === 'Import';
   const isNotebook = route.name === 'Notebook';
+  const isSettings = route.name === 'Settings';
 
   return (
     <View style={[styles.navIsland, { bottom: Math.max(insets.bottom, 18) + 14 }]}>
@@ -69,6 +70,69 @@ export default function NavigationBar() {
           />
         </Svg>
       </TouchableOpacity>
+
+      {/* Settings Icon */}
+      <TouchableOpacity
+        style={styles.navItem}
+        onPress={() => navigation.navigate('Settings')}
+      >
+        <Svg width="24" height="24" viewBox="0 0 24 24">
+          <Path
+            d="M10 5H3"
+            stroke={isSettings ? '#4DFF7E' : '#888'}
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <Path
+            d="M12 19H3"
+            stroke={isSettings ? '#4DFF7E' : '#888'}
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <Path
+            d="M14 3v4"
+            stroke={isSettings ? '#4DFF7E' : '#888'}
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <Path
+            d="M16 17v4"
+            stroke={isSettings ? '#4DFF7E' : '#888'}
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <Path
+            d="M21 12h-9"
+            stroke={isSettings ? '#4DFF7E' : '#888'}
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <Path
+            d="M21 19h-5"
+            stroke={isSettings ? '#4DFF7E' : '#888'}
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <Path
+            d="M21 5h-7"
+            stroke={isSettings ? '#4DFF7E' : '#888'}
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <Path
+            d="M8 10v4"
+            stroke={isSettings ? '#4DFF7E' : '#888'}
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <Path
+            d="M8 12H3"
+            stroke={isSettings ? '#4DFF7E' : '#888'}
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </Svg>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -77,13 +141,13 @@ const styles = StyleSheet.create({
   navIsland: {
     position: 'absolute',
     left: '50%',
-    transform: [{ translateX: -92 }],
+    transform: [{ translateX: -122 }],
     backgroundColor: 'rgba(25, 25, 25, 0.95)',
     paddingVertical: 8,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     borderRadius: 40,
     flexDirection: 'row',
-    gap: 32,
+    gap: 24,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
     shadowColor: '#000',

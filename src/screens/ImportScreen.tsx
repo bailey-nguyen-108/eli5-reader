@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -50,8 +50,7 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
   const [processingFileName, setProcessingFileName] = useState('');
   const [menuOpenBookId, setMenuOpenBookId] = useState<string | null>(null);
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
-  const { books, addBook, openBook, deleteBook, settings, updateSettings } = useAppContext();
-  const [apiKeyInput, setApiKeyInput] = useState('');
+  const { books, addBook, openBook, deleteBook } = useAppContext();
 
   // Get recent uploads (last 5 books, sorted by upload date)
   const recentFiles = useMemo(() => {
@@ -59,10 +58,6 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
       .sort((a, b) => b.uploadedAt - a.uploadedAt)
       .slice(0, 5);
   }, [books]);
-
-  useEffect(() => {
-    setApiKeyInput(settings.openaiApiKey || '');
-  }, [settings.openaiApiKey]);
 
   const createPendingImport = (
     parseResult: Awaited<ReturnType<typeof parseFile>>,
@@ -257,15 +252,6 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
     });
   };
 
-  const handleSaveApiKey = async () => {
-    const trimmed = apiKeyInput.trim();
-    await updateSettings({ openaiApiKey: trimmed || undefined });
-    notify(
-      'API Key Saved',
-      trimmed ? 'OpenAI API key saved locally on this device.' : 'OpenAI API key cleared.'
-    );
-  };
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -288,27 +274,6 @@ export default function ImportScreen({ navigation }: ImportScreenProps) {
           if (menuOpenBookId) setMenuOpenBookId(null);
         }}
       >
-        <View style={styles.apiKeyCard}>
-          <Text style={styles.apiKeyTitle}>AI Key (for this device)</Text>
-          <TextInput
-            style={styles.apiKeyInput}
-            value={apiKeyInput}
-            onChangeText={setApiKeyInput}
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholder="sk-proj-..."
-            placeholderTextColor="rgba(255,255,255,0.38)"
-          />
-          <TouchableOpacity
-            style={styles.apiKeySaveButton}
-            onPress={handleSaveApiKey}
-            activeOpacity={0.75}
-          >
-            <Text style={styles.apiKeySaveButtonText}>Save API Key</Text>
-          </TouchableOpacity>
-        </View>
-
-
         {/* Upload Area */}
         <TouchableOpacity
           style={styles.uploadArea}
@@ -553,46 +518,6 @@ const styles = StyleSheet.create({
     fontSize: 29,
     fontWeight: '400',
     color: '#ffffff',
-  },
-  apiKeyCard: {
-    borderRadius: 16,
-    backgroundColor: '#101010',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    padding: 14,
-    gap: 10,
-    marginBottom: 20,
-  },
-  apiKeyTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    color: '#8f8f8f',
-  },
-  apiKeyInput: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    backgroundColor: '#060606',
-    color: '#ffffff',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-  },
-  apiKeySaveButton: {
-    alignSelf: 'flex-start',
-    borderRadius: 999,
-    backgroundColor: '#4DFF7E',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  apiKeySaveButtonText: {
-    color: '#050505',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
   },
   uploadArea: {
     borderWidth: 2,

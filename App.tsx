@@ -8,12 +8,14 @@ import ImportScreen from './src/screens/ImportScreen';
 import ELI5ReaderScreen from './src/screens/ELI5ReaderScreen';
 import LibraryScreen from './src/screens/LibraryScreen';
 import NotebookScreen from './src/screens/NotebookScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 
 export type RootStackParamList = {
   Import: undefined;
   Reader: undefined;
   Library: undefined;
   Notebook: undefined;
+  Settings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -36,6 +38,7 @@ export default function App() {
             <Stack.Screen name="Reader" component={ELI5ReaderScreen} />
             <Stack.Screen name="Library" component={LibraryScreen} />
             <Stack.Screen name="Notebook" component={NotebookScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </AppProvider>

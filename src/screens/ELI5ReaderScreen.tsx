@@ -200,22 +200,6 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
     await requestELI5Explanation(selectionValue, trimmedParagraph);
   };
 
-  const handleNativeWordExplain = async (
-    rawWord: string,
-    paragraph: string,
-    chapterId: string
-  ) => {
-    const cleanedWord = rawWord.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
-    if (cleanedWord.length < 2) return;
-
-    setCurrentChapterId(chapterId);
-    setCurrentSelection(cleanedWord);
-    setCurrentSelectionContext(paragraph.trim());
-    setIsHighlightedSelection(false);
-
-    await requestELI5Explanation(cleanedWord, paragraph.trim());
-  };
-
   const handleCopy = () => {
     // Copy to clipboard
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -484,42 +468,27 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
             <View key={chapter.id} style={styles.chapterSection}>
               {/* Chapter Content */}
               {chapter.content.split('\n\n').filter(p => p.trim()).map((paragraph, paraIndex) => (
-                Platform.OS === 'web' ? (
-                  <Text
-                    key={`${chapter.id}-${paraIndex}`}
-                    style={styles.paragraph}
-                    selectable
-                    {...{
-                      onMouseUp: () => {
-                        setCurrentChapterId(chapter.id);
-                        setCurrentSelectionContext(paragraph.trim());
-                        handleTextSelection();
-                      },
-                    }}
-                  >
-                    {renderHighlightedText(paragraph.trim())}
-                  </Text>
-                ) : (
-                  <Text
-                    key={`${chapter.id}-${paraIndex}`}
-                    style={styles.paragraph}
-                    onLongPress={() => handleNativeParagraphExplain(paragraph, chapter.id)}
-                  >
-                    {paragraph
-                      .trim()
-                      .split(/\s+/)
-                      .map((word, wordIndex, words) => (
-                        <Text
-                          key={`${chapter.id}-${paraIndex}-${wordIndex}`}
-                          onPress={() => handleNativeWordExplain(word, paragraph, chapter.id)}
-                          style={styles.wordTapTarget}
-                        >
-                          {word}
-                          {wordIndex < words.length - 1 ? ' ' : ''}
-                        </Text>
-                      ))}
-                  </Text>
-                )
+                <Text
+                  key={`${chapter.id}-${paraIndex}`}
+                  style={styles.paragraph}
+                  selectable
+                  onLongPress={
+                    Platform.OS === 'web'
+                      ? undefined
+                      : () => handleNativeParagraphExplain(paragraph, chapter.id)
+                  }
+                  {...(Platform.OS === 'web'
+                    ? {
+                        onMouseUp: () => {
+                          setCurrentChapterId(chapter.id);
+                          setCurrentSelectionContext(paragraph.trim());
+                          handleTextSelection();
+                        },
+                      }
+                    : {})}
+                >
+                  {renderHighlightedText(paragraph.trim())}
+                </Text>
               ))}
             </View>
           ))}
@@ -641,9 +610,6 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     color: '#f0f0f0',
     marginBottom: 28,
-  },
-  wordTapTarget: {
-    color: '#f0f0f0',
   },
   highlightActive: {
     backgroundColor: '#4DFF7E',
