@@ -8,9 +8,18 @@ interface SelectionMenuProps {
   onClose: () => void;
   position?: { x: number; y: number };
   showRemove?: boolean;
+  showCopy?: boolean;
 }
 
-export default function SelectionMenu({ onELI5, onCopy, onRemove, onClose, position, showRemove }: SelectionMenuProps) {
+export default function SelectionMenu({
+  onELI5,
+  onCopy,
+  onRemove,
+  onClose,
+  position,
+  showRemove,
+  showCopy = true,
+}: SelectionMenuProps) {
   return (
     <View style={[styles.container, position && { top: position.y, left: position.x }]}>
       <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -19,10 +28,14 @@ export default function SelectionMenu({ onELI5, onCopy, onRemove, onClose, posit
       <TouchableOpacity style={styles.button} onPress={onELI5}>
         <Text style={styles.buttonText}>ELI5</Text>
       </TouchableOpacity>
-      <View style={styles.divider} />
-      <TouchableOpacity style={styles.button} onPress={onCopy}>
-        <Text style={styles.buttonText}>Copy</Text>
-      </TouchableOpacity>
+      {showCopy && (
+        <>
+          <View style={styles.divider} />
+          <TouchableOpacity style={styles.button} onPress={onCopy}>
+            <Text style={styles.buttonText}>Copy</Text>
+          </TouchableOpacity>
+        </>
+      )}
       {showRemove && (
         <>
           <View style={styles.divider} />

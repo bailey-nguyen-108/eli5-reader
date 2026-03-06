@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
@@ -10,6 +11,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   Platform,
+  Dimensions,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -45,6 +47,7 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
   const [isHighlightedSelection, setIsHighlightedSelection] = useState(false);
   const [eli5Phrases, setEli5Phrases] = useState<string[]>([]); // Track ELI5'd phrases
   const [showNavMenu, setShowNavMenu] = useState(false);
+  const nativeSelectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Redirect to library if no book is selected
   useEffect(() => {
@@ -88,12 +91,6 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
       </View>
     );
   }
-
-  const buildPassageLabel = (paragraph: string) => {
-    const words = paragraph.trim().split(/\s+/).filter(Boolean);
-    const label = words.slice(0, 8).join(' ');
-    return words.length > 8 ? `${label}...` : label;
-  };
 
   const handleTextSelection = () => {
     if (Platform.OS !== 'web') {
@@ -187,17 +184,52 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
     await requestELI5Explanation(currentSelection, currentSelectionContext);
   };
 
-  const handleNativeParagraphExplain = async (paragraph: string, chapterId: string) => {
-    const trimmedParagraph = paragraph.trim();
-    if (!trimmedParagraph) return;
+  const handleNativeSelectionChange = (
+    paragraph: string,
+    chapterId: string,
+    start: number,
+    end: number
+  ) => {
+    if (Platform.OS === 'web') return;
 
-    const selectionValue = buildPassageLabel(trimmedParagraph);
+    if (nativeSelectionTimerRef.current) {
+      clearTimeout(nativeSelectionTimerRef.current);
+      nativeSelectionTimerRef.current = null;
+    }
+
+    const selectionStart = Math.min(start, end);
+    const selectionEnd = Math.max(start, end);
+
+    if (selectionStart === selectionEnd) {
+      setShowSelectionMenu(false);
+      return;
+    }
+
+    const selectedText = paragraph.substring(selectionStart, selectionEnd).trim();
+    if (!selectedText) {
+      setShowSelectionMenu(false);
+      return;
+    }
+
     setCurrentChapterId(chapterId);
-    setCurrentSelection(selectionValue);
-    setCurrentSelectionContext(trimmedParagraph);
-    setIsHighlightedSelection(false);
+    setCurrentSelection(selectedText);
+    setCurrentSelectionContext(paragraph);
 
-    await requestELI5Explanation(selectionValue, trimmedParagraph);
+    const isAlreadyHighlighted = eli5Phrases.some(
+      phrase => phrase.toLowerCase() === selectedText.toLowerCase()
+    );
+    setIsHighlightedSelection(isAlreadyHighlighted);
+
+    const menuWidth = isAlreadyHighlighted ? 240 : 170;
+    const { width, height } = Dimensions.get('window');
+    setSelectionMenuPosition({
+      x: Math.max(12, width / 2 - menuWidth / 2),
+      y: Math.max(insets.top + 72, height - 160 - insets.bottom),
+    });
+
+    nativeSelectionTimerRef.current = setTimeout(() => {
+      setShowSelectionMenu(true);
+    }, 180);
   };
 
   const handleCopy = () => {
@@ -370,6 +402,14 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (nativeSelectionTimerRef.current) {
+        clearTimeout(nativeSelectionTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleNavigateFromMenu = (screen: 'Library' | 'Notebook') => {
     setShowNavMenu(false);
     navigation.navigate(screen);
@@ -463,32 +503,41 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
         scrollEventThrottle={400}
       >
         {/* Reading Content - All Chapters */}
-        <View style={styles.readingContent} onStartShouldSetResponder={() => true}>
+        <View style={styles.readingContent}>
           {currentBook.content.chapters.map((chapter, chapterIndex) => (
             <View key={chapter.id} style={styles.chapterSection}>
               {/* Chapter Content */}
               {chapter.content.split('\n\n').filter(p => p.trim()).map((paragraph, paraIndex) => (
-                <Text
-                  key={`${chapter.id}-${paraIndex}`}
-                  style={styles.paragraph}
-                  selectable
-                  onLongPress={
-                    Platform.OS === 'web'
-                      ? undefined
-                      : () => handleNativeParagraphExplain(paragraph, chapter.id)
-                  }
-                  {...(Platform.OS === 'web'
-                    ? {
-                        onMouseUp: () => {
-                          setCurrentChapterId(chapter.id);
-                          setCurrentSelectionContext(paragraph.trim());
-                          handleTextSelection();
-                        },
-                      }
-                    : {})}
-                >
-                  {renderHighlightedText(paragraph.trim())}
-                </Text>
+                Platform.OS === 'web' ? (
+                  <Text
+                    key={`${chapter.id}-${paraIndex}`}
+                    style={styles.paragraph}
+                    selectable
+                    {...({
+                      onMouseUp: () => {
+                        setCurrentChapterId(chapter.id);
+                        setCurrentSelectionContext(paragraph.trim());
+                        handleTextSelection();
+                      },
+                    } as any)}
+                  >
+                    {renderHighlightedText(paragraph.trim())}
+                  </Text>
+                ) : (
+                  <TextInput
+                    key={`${chapter.id}-${paraIndex}`}
+                    style={styles.nativeParagraphInput}
+                    value={paragraph.trim()}
+                    editable={false}
+                    multiline
+                    scrollEnabled={false}
+                    contextMenuHidden={false}
+                    onSelectionChange={(event) => {
+                      const { start, end } = event.nativeEvent.selection;
+                      handleNativeSelectionChange(paragraph.trim(), chapter.id, start, end);
+                    }}
+                  />
+                )
               ))}
             </View>
           ))}
@@ -496,7 +545,7 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
       </ScrollView>
 
       {/* Selection Menu */}
-      {showSelectionMenu && Platform.OS === 'web' && (
+      {showSelectionMenu && (
         <SelectionMenu
           onELI5={handleELI5Click}
           onCopy={handleCopy}
@@ -504,6 +553,7 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
           onClose={handleCloseSelectionMenu}
           position={selectionMenuPosition}
           showRemove={isHighlightedSelection}
+          showCopy={Platform.OS === 'web'}
         />
       )}
 
@@ -610,6 +660,15 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     color: '#f0f0f0',
     marginBottom: 28,
+  },
+  nativeParagraphInput: {
+    fontFamily: 'Georgia',
+    fontSize: 20,
+    lineHeight: 34,
+    color: '#f0f0f0',
+    marginBottom: 28,
+    padding: 0,
+    borderWidth: 0,
   },
   highlightActive: {
     backgroundColor: '#4DFF7E',
