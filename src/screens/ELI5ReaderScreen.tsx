@@ -14,6 +14,7 @@ import {
   Dimensions,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import * as Clipboard from 'expo-clipboard';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../../App';
@@ -47,6 +48,7 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
   const [isHighlightedSelection, setIsHighlightedSelection] = useState(false);
   const [eli5Phrases, setEli5Phrases] = useState<string[]>([]); // Track ELI5'd phrases
   const [showNavMenu, setShowNavMenu] = useState(false);
+  const [nativeSelectionAnchor, setNativeSelectionAnchor] = useState<{ x: number; y: number } | null>(null);
   const nativeSelectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Redirect to library if no book is selected
@@ -222,9 +224,15 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
 
     const menuWidth = isAlreadyHighlighted ? 240 : 170;
     const { width, height } = Dimensions.get('window');
+    const anchorX = nativeSelectionAnchor?.x ?? width / 2;
+    const anchorY = nativeSelectionAnchor?.y ?? height * 0.45;
+
     setSelectionMenuPosition({
-      x: Math.max(12, width / 2 - menuWidth / 2),
-      y: Math.max(insets.top + 72, height - 160 - insets.bottom),
+      x: Math.max(12, Math.min(width - menuWidth - 12, anchorX - menuWidth / 2)),
+      y: Math.max(
+        insets.top + 72,
+        Math.min(height - 140 - insets.bottom, anchorY - 62)
+      ),
     });
 
     nativeSelectionTimerRef.current = setTimeout(() => {
@@ -232,12 +240,12 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
     }, 180);
   };
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     // Copy to clipboard
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(currentSelection);
+      await navigator.clipboard.writeText(currentSelection);
     } else {
-      Alert.alert('Copy Not Available', 'Copy is currently available in the web reader only.');
+      await Clipboard.setStringAsync(currentSelection);
     }
     setShowSelectionMenu(false);
     if (Platform.OS === 'web') {
@@ -531,7 +539,11 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
                     editable={false}
                     multiline
                     scrollEnabled={false}
-                    contextMenuHidden={false}
+                    contextMenuHidden
+                    onTouchStart={(event) => {
+                      const { pageX, pageY } = event.nativeEvent;
+                      setNativeSelectionAnchor({ x: pageX, y: pageY });
+                    }}
                     onSelectionChange={(event) => {
                       const { start, end } = event.nativeEvent.selection;
                       handleNativeSelectionChange(paragraph.trim(), chapter.id, start, end);
@@ -553,7 +565,7 @@ export default function ELI5ReaderScreen({ navigation }: ELI5ReaderScreenProps) 
           onClose={handleCloseSelectionMenu}
           position={selectionMenuPosition}
           showRemove={isHighlightedSelection}
-          showCopy={Platform.OS === 'web'}
+          showCopy
         />
       )}
 

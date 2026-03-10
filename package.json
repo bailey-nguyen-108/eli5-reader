@@ -4,10 +4,13 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
+    "start:dev-client": "expo start --dev-client --lan",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "eas:build:ios": "eas build --platform ios --profile production",
-    "eas:submit:ios": "eas submit --platform ios --profile production"
+    "eas:build:ios:dev": "npx --yes eas-cli build --platform ios --profile development",
+    "eas:build:ios:dev-sim": "npx --yes eas-cli build --platform ios --profile development-simulator",
+    "eas:build:ios": "npx --yes eas-cli build --platform ios --profile production",
+    "eas:submit:ios": "npx --yes eas-cli submit --platform ios --profile production"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -15,6 +18,8 @@
     "@react-navigation/native-stack": "^7.14.2",
     "epubjs": "^0.3.93",
     "expo": "~55.0.4",
+    "expo-clipboard": "~55.0.8",
+    "expo-dev-client": "~55.0.13",
     "expo-document-picker": "^55.0.8",
     "expo-linear-gradient": "^55.0.8",
     "expo-status-bar": "~55.0.4",
